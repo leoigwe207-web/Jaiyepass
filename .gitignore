@@ -11,3 +11,8 @@ coverage/
 .freebuff/*.log
 .freebuff/*.log.err
 freebuff-sites-build/build.log
+.freebuff/gh-pat.txt
+gh-pat.txt
+
+.vercel
+.env*
