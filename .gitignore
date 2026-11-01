@@ -27,3 +27,7 @@ gh-pat.txt
 
 .vercel
 .env*
+
+# Local Supabase cache and patch backups
+supabase/.temp/
+.jp-*-backups/
