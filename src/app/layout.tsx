@@ -3,6 +3,7 @@ import { Fraunces, Archivo } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { AnalyticsConsentBanner } from "@/components/analytics/analytics";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -21,7 +22,15 @@ export const metadata: Metadata = {
     template: "%s · JaiyePass",
   },
   description:
-    "Discover events in Lagos, make plans with friends, and enter with a secure digital ticket.",
+    "Discover concerts, festivals, comedy and nightlife across Nigeria. Find events, book securely and access tickets on your phone.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://jaiyepass.vercel.app"),
+  openGraph: {
+    title: "JaiyePass — Your pass to a good time",
+    description: "Discover experiences across Nigeria. Find events, book securely and access tickets on your phone.",
+    type: "website",
+    siteName: "JaiyePass",
+    locale: "en_NG",
+  },
 };
 
 export const viewport: Viewport = {
@@ -45,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <SiteFooter />
+        <AnalyticsConsentBanner />
       </body>
     </html>
   );

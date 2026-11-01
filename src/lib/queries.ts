@@ -1,6 +1,8 @@
 import "server-only";
 import { createClient } from "./supabase/server";
 import type { EventCardDatum } from "@/components/event-card";
+import { decorateEventCards } from "./event-card-logic";
+import { eventDateRange } from "./date-filters";
 
 /**
  * Public read layer. Every query degrades to an empty result when Supabase is
@@ -15,34 +17,10 @@ export function supabaseConfigured(): boolean {
 }
 
 const EVENT_CARD_SELECT =
-  "id, slug, title, tagline, image_url, starts_at, is_demo, is_free, city_name:cities(name), ticket_types(price_kobo, quantity, sold_count, status, sales_end_at)";
+  "id, slug, title, tagline, image_url, starts_at, is_demo, is_free, city_name:cities(name), ticket_types(price_kobo, quantity, sold_count, status, sales_start_at, sales_end_at)";
 
 /** Derive display price + availability from ticket types in one pass. */
-function decorate(
-  rows: (EventCardDatum & {
-    ticket_types?: { price_kobo: number; quantity: number; sold_count: number; status: string; sales_end_at: string | null }[] | null;
-  })[],
-): EventCardDatum[] {
-  return rows.map(({ ticket_types, ...rest }) => {
-    const open = (ticket_types ?? []).filter((t) => t.status === "active");
-    const prices = open.map((t) => t.price_kobo);
-    const remaining = open.reduce((sum, t) => sum + (t.quantity - t.sold_count), 0);
-    const availability: EventCardDatum["availability"] =
-      open.length === 0
-        ? "closed"
-        : remaining === 0
-          ? "sold_out"
-          : remaining <= 10
-            ? "few"
-            : "available";
-    return {
-      ...rest,
-      price_min_kobo: prices.length ? Math.min(...prices) : null,
-      is_free: prices.length > 0 && prices.every((p) => p === 0),
-      availability,
-    };
-  });
-}
+const decorate = decorateEventCards;
 
 export async function getFeaturedEvents(limit = 4): Promise<EventCardDatum[]> {
   if (!supabaseConfigured()) return [];
@@ -51,6 +29,7 @@ export async function getFeaturedEvents(limit = 4): Promise<EventCardDatum[]> {
     .from("events")
     .select(EVENT_CARD_SELECT)
     .eq("status", "published")
+    .eq("is_demo", false)
     .order("featured", { ascending: false })
     .order("starts_at", { ascending: true })
     .limit(limit);
@@ -77,55 +56,57 @@ export async function browseEvents(
   let query = supabase
     .from("events")
     .select(`${EVENT_CARD_SELECT}, venue_name:venues(name), category_name:categories(slug)`)
-    .eq("status", "published");
+    .eq("status", "published")
+    .eq("is_demo", false);
 
   if (filters.q) {
-    const term = filters.q.replace(/[%_,]/g, " ").trim();
-    if (term) query = query.or(`title.ilike.%${term}%,tagline.ilike.%${term}%`);
+    // Supabase's PostgREST OR expression must be sanitized before interpolation.
+    const term = filters.q.replace(/[%_,.()\\]/g, " ").trim().slice(0, 80);
+    if (term) {
+      const { data: venues } = await supabase
+        .from("venues")
+        .select("id")
+        .ilike("name", `%${term}%`)
+        .limit(30);
+      const venueIds = (venues ?? []).map((v) => v.id).filter(Boolean);
+      const venueExpression = venueIds.length ? `,venue_id.in.(${venueIds.join(",")})` : "";
+      query = query.or(`title.ilike.%${term}%,tagline.ilike.%${term}%,description.ilike.%${term}%${venueExpression}`);
+    }
   }
   if (filters.city) query = query.eq("city_id", (await idByName(supabase, "cities", filters.city)) ?? "00000000-0000-0000-0000-000000000000");
   if (filters.category)
     query = query.eq("category_id", (await idByName(supabase, "categories", filters.category)) ?? "00000000-0000-0000-0000-000000000000");
 
-  const now = new Date();
-  if (filters.date === "today") {
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-    query = query.gte("starts_at", now.toISOString()).lte("starts_at", end.toISOString());
-  } else if (filters.date === "weekend") {
-    // Upcoming Saturday → Sunday midnight.
-    const sat = new Date(now);
-    sat.setDate(now.getDate() + ((6 - now.getDay() + 7) % 7 || 7));
-    const sun = new Date(sat);
-    sun.setDate(sat.getDate() + 1);
-    sun.setHours(23, 59, 59, 999);
-    query = query.gte("starts_at", sat.toISOString()).lte("starts_at", sun.toISOString());
-  } else if (filters.date === "week") {
-    const end = new Date(now);
-    end.setDate(end.getDate() + 7);
-    query = query.gte("starts_at", now.toISOString()).lte("starts_at", end.toISOString());
-  } else if (filters.date === "month") {
-    const end = new Date(now);
-    end.setMonth(end.getMonth() + 1);
-    query = query.gte("starts_at", now.toISOString()).lte("starts_at", end.toISOString());
+  if (filters.date) {
+    const range = eventDateRange(filters.date);
+    query = query.gte("starts_at", range.start).lt("starts_at", range.end);
   } else {
     query = query.gte("starts_at", new Date(Date.now() - 6 * 3600_000).toISOString());
   }
 
-  if (filters.price === "free") query = query.eq("is_free", true);
+  // Price and availability are checked against open ticket tiers after the read;
+  // events.is_free can be stale if organizers edit prices.
   if (filters.sort === "recent") query = query.order("created_at", { ascending: false });
   else query = query.order("starts_at", { ascending: true });
 
-  const { data } = await query.limit(limit);
+  const { data } = await query.limit(
+    filters.price || filters.availability ? Math.min(300, Math.max(limit * 4, 96)) : limit,
+  );
   let rows = decorate((data ?? []) as never[]) as (EventCardDatum & {
     category_name?: string | null;
     venue_name?: string | null;
   })[];
 
-  if (filters.price === "under10000") {
-    rows = rows.filter((r) => (r.price_min_kobo ?? 0) <= 1_000_000);
+  if (filters.price === "free") {
+    rows = rows.filter((r) => r.price_min_kobo === 0);
   }
-  return rows;
+  if (filters.price === "under10000") {
+    rows = rows.filter((r) => r.price_min_kobo != null && r.price_min_kobo <= 1_000_000);
+  }
+  if (filters.availability) {
+    rows = rows.filter((r) => r.availability === "available" || r.availability === "few");
+  }
+  return rows.slice(0, limit);
 }
 
 async function idByName(
@@ -144,6 +125,7 @@ export async function getCities(): Promise<{ name: string; slug: string }[]> {
     .from("cities")
     .select("name, slug")
     .eq("is_active", true)
+    .eq("country", "Nigeria")
     .order("sort_order");
   return data ?? [];
 }
@@ -174,5 +156,5 @@ export async function getSavedEvents(userId: string): Promise<EventCardDatum[]> 
   const rows = ((data ?? []) as unknown as { event: null }[])
     .map((r) => r.event)
     .filter(Boolean) as never[];
-  return decorate(rows);
+  return decorate(rows).filter((e) => !e.is_demo);
 }

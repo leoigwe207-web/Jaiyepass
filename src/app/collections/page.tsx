@@ -9,26 +9,23 @@ export const metadata: Metadata = { title: "Collections" };
 export const revalidate = 600;
 
 export default async function CollectionsPage() {
-  const all = await browseEvents({ sort: "soonest" }, 60);
+  const collections = await Promise.all(COLLECTIONS.map(async (collection) => ({
+    ...collection,
+    matches: await browseEvents({ ...collection.filter, sort: "soonest" }, 4),
+  })));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <p className="eyebrow">Curated</p>
+      <p className="eyebrow">Browse events</p>
       <h1 className="display-lg mt-2">Collections</h1>
       <p className="mt-3 max-w-[60ch] text-ink-soft">
-        Hand-picked shortcuts through the calendar. Each collection is a saved
-        search, so it always reflects what's live right now.
+        Useful shortcuts for finding events by date or price. All results come from
+        published listings, not sample recommendations.
       </p>
 
       <div className="mt-10 space-y-14">
-        {COLLECTIONS.map((c) => {
-          const matches = all
-            .filter((e) => {
-              if (c.filter.price === "free" && !e.is_free) return false;
-              if (c.filter.price === "under10000" && (e.price_min_kobo ?? 0) > 1_000_000) return false;
-              return true;
-            })
-            .slice(0, 4);
+        {collections.map((c) => {
+          const matches = c.matches;
 
           return (
             <section key={c.slug} aria-labelledby={`col-${c.slug}`}>

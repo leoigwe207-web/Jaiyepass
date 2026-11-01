@@ -113,7 +113,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === "busy"}
-        className="rounded-card bg-ink px-6 py-3 text-sm font-semibold text-paper hover:bg-night disabled:opacity-60"
+        className="jp-primary-action rounded-card bg-ink px-6 py-3 text-sm font-semibold text-paper hover:bg-night disabled:opacity-60"
       >
         {status === "busy" ? "Sending…" : "Send message"}
       </button>

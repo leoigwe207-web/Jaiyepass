@@ -6,7 +6,6 @@ import { verifyPayloadSignature, hashPayload } from "@/lib/ticket-token";
 import { serverEnv } from "@/lib/env";
 import { rateLimit, clientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { writeAuditLog } from "@/lib/audit";
-import { getDemoUser } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -48,16 +47,6 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid scan data." }, { status: 400 });
 
   const { payload, eventId } = parsed.data;
-
-  // Preview demo mode (fail-closed elsewhere): simulate verdicts for the demo
-  // scanner/host/admin roles without touching any database. Nothing is stored.
-  const demoUser = await getDemoUser();
-  if (demoUser) {
-    if (demoUser.role === "attendee") {
-      return NextResponse.json({ error: "This demo account is not assigned to scan." }, { status: 403 });
-    }
-    return NextResponse.json({ ...simulateDemoScan(payload), demo: true, eventId });
-  }
 
   const admin = createAdminClient();
 
@@ -129,40 +118,6 @@ export async function POST(req: Request) {
   };
 
   return NextResponse.json({ result, message: messages[result] ?? "Invalid ticket", ticket });
-}
-
-/** Deterministic simulated verdicts for preview demo scans — never persisted. */
-function simulateDemoScan(payload: string): {
-  result: string;
-  message: string;
-  ticket: { ticketType: string; attendeeName: string; usedAt: string | null } | null;
-} {
-  if (payload.includes("preview-used")) {
-    return {
-      result: "already_used",
-      message: "Already used (demo — nothing was recorded)",
-      ticket: {
-        ticketType: "General Admission (demo)",
-        attendeeName: "Demo Guest",
-        usedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      },
-    };
-  }
-  if (payload.includes("preview-wrong-event")) {
-    return {
-      result: "wrong_event",
-      message: "This ticket is for a different event (demo)",
-      ticket: null,
-    };
-  }
-  if (!payload.startsWith("demo.")) {
-    return { result: "invalid", message: "Not a valid JaiyePass ticket (demo)", ticket: null };
-  }
-  return {
-    result: "valid",
-    message: "Valid — entry granted (demo, not recorded)",
-    ticket: { ticketType: "General Admission (demo)", attendeeName: "Demo Guest", usedAt: null },
-  };
 }
 
 /** Host/admin members of the event's org can also scan (manual fallback). */

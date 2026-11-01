@@ -2,7 +2,6 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import { createAdminClient } from "./supabase/admin";
-import { getDemoUser } from "./demo";
 
 export interface SessionUser {
   id: string;
@@ -13,26 +12,19 @@ export interface SessionUser {
 
 /** Returns the signed-in user's profile, or null. Never throws. */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  // Preview demo session (fail-closed: only when no DB + not production).
-  const demo = await getDemoUser();
-  if (demo) {
-    return {
-      id: `demo-${demo.role}`,
-      email: demo.email,
-      role: demo.role === "admin" ? "admin" : "attendee",
-      fullName: demo.label,
-    };
-  }
   try {
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     if (!data.user) return null;
-    const { data: profile } = await supabase
+    // Server-only role lookup, restricted to the ID verified by getUser().
+    // Never accept a user ID or role from the browser for this check.
+    const admin = createAdminClient();
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("id, email, role, full_name")
       .eq("id", data.user.id)
-      .single();
-    if (!profile) return null;
+      .maybeSingle();
+    if (profileError || !profile) return null;
     return {
       id: profile.id,
       email: profile.email,
@@ -44,16 +36,17 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
 }
 
-export async function requireUser(): Promise<SessionUser> {
+export async function requireUser(nextPath?: string): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+    ? `/login?next=${encodeURIComponent(nextPath)}` : "/login");
   return user;
 }
 
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
-  if (user.role !== "admin") redirect("/");
+  if (!user) redirect("/login?next=/admin");
+  if (user.role !== "admin") redirect("/access-denied");
   return user;
 }
 
@@ -78,12 +71,6 @@ export async function getOrgMembership(
 
 /** Resolve the host org a user belongs to (single-org MVP simplification). */
 export async function getManagedOrgId(userId: string): Promise<string | null> {
-  // Demo host sessions get a placeholder org without touching the database.
-  if (userId.startsWith("demo-")) {
-    const demo = await getDemoUser();
-    if (demo?.role === "host") return "demo-org";
-    if (demo) return null;
-  }
   const admin = createAdminClient();
   const { data } = await admin
     .from("organization_members")

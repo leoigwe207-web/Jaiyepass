@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/** Image block for events: real artwork when present, styled demo poster fallback. */
+/** Image block for events: real artwork when present, safe typographic fallback. */
 export function EventImage({
   src,
   alt,
@@ -62,13 +62,6 @@ export function Badge({
   );
 }
 
-export function DemoBadge() {
-  return (
-    <span className="inline-flex items-center rounded-card border border-brass/40 bg-brass/10 px-2 py-0.5 text-[11px] font-semibold text-brass">
-      Demo data
-    </span>
-  );
-}
 
 export function ButtonLink({
   href,
@@ -92,7 +85,7 @@ export function ButtonLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-card px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${styles} ${className}`}
+      className={`jp-primary-action inline-flex items-center justify-center gap-2 rounded-card px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${styles} ${className}`}
       {...rest}
     >
       {children}

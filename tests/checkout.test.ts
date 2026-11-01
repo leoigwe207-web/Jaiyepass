@@ -64,7 +64,7 @@ describe("createPendingOrder", () => {
   function setupHappyPath() {
     rpcMock.mockResolvedValue({ data: "44444444-4444-4444-8444-444444444444", error: null });
     fromMock.mockImplementation((table: string) => {
-      if (table === "events") return chain({ data: { id: eventId, status: "published", organization_id: "o", title: "T" } });
+      if (table === "events") return chain({ data: { id: eventId, status: "published", organization_id: "o", title: "T", is_demo: false, starts_at: new Date(Date.now() + 86_400_000).toISOString() } });
       if (table === "ticket_types") {
         return chain({
           data: [{ id: ttId, event_id: eventId, name: "Regular", price_kobo: 5000, quantity: 10, sold_count: 0, per_order_limit: 4, status: "active", sales_start_at: null, sales_end_at: null }],
@@ -85,6 +85,32 @@ describe("createPendingOrder", () => {
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
+  it("blocks demo listings even if their database status is published", async () => {
+    fromMock.mockImplementation((table: string) =>
+      table === "events" ? chain({ data: {
+        id: eventId, status: "published", is_demo: true,
+        starts_at: new Date(Date.now() + 86_400_000).toISOString(),
+      } }) : chain(),
+    );
+    const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 1 }] });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(404);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks tickets once an event has started", async () => {
+    fromMock.mockImplementation((table: string) =>
+      table === "events" ? chain({ data: {
+        id: eventId, status: "published", is_demo: false,
+        starts_at: new Date(Date.now() - 3_600_000).toISOString(),
+      } }) : chain(),
+    );
+    const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 1 }] });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(404);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid quantities before touching the database", async () => {
     const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 0 }] });
     expect(res.ok).toBe(false);
@@ -94,7 +120,7 @@ describe("createPendingOrder", () => {
 
   it("returns 409 with a friendly message when inventory runs out", async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === "events") return chain({ data: { id: eventId, status: "published" } });
+      if (table === "events") return chain({ data: { id: eventId, status: "published", is_demo: false, starts_at: new Date(Date.now() + 86_400_000).toISOString() } });
       if (table === "ticket_types") {
         return chain({
           data: [{ id: ttId, event_id: eventId, name: "Regular", price_kobo: 5000, quantity: 10, sold_count: 0, per_order_limit: 4, status: "active", sales_start_at: null, sales_end_at: null }],
@@ -130,7 +156,7 @@ describe("createPendingOrder", () => {
 
   it("rejects ticket types that belong to another event", async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === "events") return chain({ data: { id: eventId, status: "published" } });
+      if (table === "events") return chain({ data: { id: eventId, status: "published", is_demo: false, starts_at: new Date(Date.now() + 86_400_000).toISOString() } });
       if (table === "ticket_types") {
         return chain({
           data: [{ id: ttId, event_id: "99999999-9999-4999-8999-999999999999", name: "R", price_kobo: 1, quantity: 5, sold_count: 0, per_order_limit: 4, status: "active", sales_start_at: null, sales_end_at: null }],

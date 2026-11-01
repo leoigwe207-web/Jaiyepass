@@ -64,27 +64,39 @@ export default async function PayoutsPage() {
       <section>
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">Payouts</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Ticket revenue lands in your available balance after payment confirmation. Withdraw to your registered bank
-          account — requests are reviewed within one business day.
+          Sales are not the same as settled funds. Withdrawals use verified reconciled balances only, minus pending
+          payouts. Transfers are manually reviewed; timelines depend on bank and provider confirmation.
         </p>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Card label="Gross sales" value={formatKobo(balance.grossKobo, { hideZeroDecimals: true })} />
-        <Card label="Refunded" value={formatKobo(balance.refundedKobo, { hideZeroDecimals: true })} />
-        <Card
-          label="Available"
-          value={formatKobo(balance.availableKobo, { hideZeroDecimals: true })}
-          highlight
-        />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card label="Ticket revenue" value={balance.ledgerReady ? formatKobo(balance.ticketRevenueKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Paid orders" value={balance.ledgerReady ? String(balance.paidOrderCount) : "—"} />
+        <Card label="Checkout fees charged" value={balance.ledgerReady ? formatKobo(balance.checkoutFeesKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Refunds processed" value={balance.ledgerReady ? formatKobo(balance.refundedKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Platform fees reconciled" value={balance.ledgerReady ? formatKobo(balance.platformFeesKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Processor fees reconciled" value={balance.ledgerReady ? formatKobo(balance.processorFeesKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Payouts reserved" value={balance.ledgerReady ? formatKobo(balance.reservedKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Payouts completed" value={balance.ledgerReady ? formatKobo(balance.paidOutKobo, { hideZeroDecimals: true }) : "—"} />
+        <Card label="Verified available balance" value={balance.ledgerReady ? formatKobo(balance.availableKobo, { hideZeroDecimals: true }) : "—"} highlight />
       </section>
+      {!balance.ledgerReady && (
+        <p role="status" className="rounded-card border border-warning/40 bg-warning/5 p-4 text-sm text-ink-soft">
+          Verified settlement accounting has not been activated yet. Withdrawals are unavailable until migration,
+          Paystack reconciliation and bank-account checks are completed.
+        </p>
+      )}
 
       <section className="rounded-card border border-line bg-white p-5">
         <h2 className="font-bold">Withdraw funds</h2>
-        {!hasBankDetails ? (
+        {!balance.ledgerReady ? (
+          <p className="mt-2 text-sm text-ink-faint">Payout requests are securely paused until reconciliation is enabled.</p>
+        ) : !hasBankDetails ? (
           <p className="mt-2 text-sm text-ink-faint">
             Register your bank details on your organizer account first (contact support to update them).
           </p>
+        ) : balance.availableKobo <= 0 ? (
+          <p className="mt-2 text-sm text-ink-faint">No verified, withdrawable settlement is available yet.</p>
         ) : canRequest ? (
           <div className="mt-3">
             <p className="mb-2 text-xs text-ink-faint">

@@ -12,24 +12,19 @@ const LINKS = [
 export function HostNav({
   email,
   isHost,
-  demo = false,
 }: {
   email: string;
   isHost: boolean;
-  demo?: boolean;
 }) {
   const pathname = usePathname();
-  // Demo sessions only get the sampled overview section.
-  const links = demo ? LINKS.slice(0, 1) : LINKS;
+  const links = LINKS;
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-neon-deep">Organizer dashboard</p>
         <p className="mt-0.5 text-sm text-ink-faint">{email}</p>
-        {demo && (
-          <p className="mt-0.5 text-xs font-bold text-neon-deep">Demo mode · sample data only</p>
-        )}
+
       </div>
       {isHost && (
         <nav aria-label="Host sections" className="flex flex-wrap gap-1">

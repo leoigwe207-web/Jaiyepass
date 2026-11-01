@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isTestMode } from "@/lib/env";
-import { verifyAndFinalizeOrder, deliverReceipt } from "@/lib/checkout";
+import { verifyAndFinalizeOrder } from "@/lib/checkout";
 import { formatKobo } from "@/lib/money";
+import { OrderCompleted } from "@/components/analytics/analytics";
 
 export const metadata: Metadata = { title: "Payment status" };
 export const dynamic = "force-dynamic";
@@ -32,16 +33,14 @@ export default async function CheckoutSuccessPage({ params }: Params) {
 
   if (!isTestMode()) {
     const outcome = await verifyAndFinalizeOrder(orderId);
-    if (outcome.ok && outcome.status === "paid") {
-      await deliverReceipt(orderId); // deliverReceipt is safe to repeat
-    }
+    if (!outcome.ok) console.warn("[checkout] verification pending", outcome.error);
   }
 
   const { data } = await supabase
     .from("orders")
     .select(
       `id, status, total_kobo, subtotal_kobo, fee_kobo, discount_kobo,
-       event:events(title, slug)`,
+       event:events(id, title, slug)`,
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -50,7 +49,7 @@ export default async function CheckoutSuccessPage({ params }: Params) {
     id: string;
     status: string;
     total_kobo: number;
-    event: { title: string; slug: string } | null;
+    event: { id: string; title: string; slug: string } | null;
   } | null;
 
   const paid = order?.status === "paid";
@@ -59,12 +58,18 @@ export default async function CheckoutSuccessPage({ params }: Params) {
   if (paid) {
     return (
       <div className="mx-auto max-w-lg rounded-card border border-success/30 bg-success/5 p-8 text-center">
+        <OrderCompleted
+          userId={user.id}
+          orderId={order.id}
+          eventId={order.event?.id ?? null}
+          totalKobo={order.total_kobo}
+        />
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-success">Payment confirmed</p>
         <h1 className="mt-2 font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">
           You&apos;re going to {order?.event?.title ?? "the event"}!
         </h1>
         <p className="mt-3 text-sm text-ink-soft">
-          Your QR tickets are ready and a receipt is on its way to your email. Show the QR code at the gate — don&apos;t
+          Your QR tickets are ready. We will email your QR codes to your registered address after delivery is confirmed. Show the QR code at the gate — don&apos;t
           share screenshots.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">

@@ -1,7 +1,7 @@
 # JaiyePass — Database Schema
 
 Source of truth: SQL migrations in `supabase/migrations/`
-(`0001_setup.sql` → `0002_tables.sql` → `0003_functions.sql` → `0004_rls.sql` → `0005_seed.sql`).
+(`20261026090101_setup.sql` → `20261026090102_tables.sql` → `20261026090103_functions.sql` → `20261026090104_rls.sql` → `20261026090105_seed.sql`).
 **All money is integer kobo. All ids are UUID. All timestamps are `timestamptz` (UTC).**
 
 ---

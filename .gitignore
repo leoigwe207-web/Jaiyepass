@@ -16,3 +16,14 @@ gh-pat.txt
 
 .vercel
 .env*
+
+# V2 release hygiene
+.freebuff/
+.v2-backups/
+*.log
+.vercel/
+
+!.env.example
+
+.vercel
+.env*

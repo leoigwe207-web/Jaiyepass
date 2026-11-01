@@ -2,7 +2,7 @@ import Link from "next/link";
 import { browseEvents, getCategories, getCities, supabaseConfigured } from "@/lib/queries";
 import { COLLECTIONS } from "@/lib/collections";
 import { EventCard, EventFeature, EventRow } from "@/components/event-card";
-import { ButtonLink, DemoBadge, EmptyState } from "@/components/ui";
+import { ButtonLink, EmptyState } from "@/components/ui";
 import { HomeSearch } from "@/components/home-search";
 
 export const revalidate = 300;
@@ -18,28 +18,33 @@ export default async function HomePage() {
   const hero = featured[0];
   const secondary = featured.slice(1, 3);
   const gridEvents = upcoming.filter((e) => e.slug !== hero?.slug).slice(0, 6);
-  const under10k = upcoming.filter((e) => (e.price_min_kobo ?? 0) <= 1_000_000 && e.slug !== hero?.slug).slice(0, 4);
+  const under10k = upcoming.filter((e) => e.price_min_kobo != null && e.price_min_kobo <= 1_000_000 && e.slug !== hero?.slug).slice(0, 4);
   const freeEvents = upcoming.filter((e) => e.is_free && e.slug !== hero?.slug).slice(0, 4);
 
   return (
     <>
       {/* ── Hero: event-led, spacious, readable on a small laptop ─────────── */}
-      <section className="border-b border-line">
-        <div className="mx-auto max-w-6xl px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-14">
+      <section className="relative overflow-hidden border-b border-line bg-paper">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full border-[70px] border-neon/10" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-14">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-end">
             <div>
-              <p className="eyebrow">Lagos · Nigeria</p>
+              <p className="eyebrow">Culture, concerts & experiences · Across Nigeria</p>
               <h1 className="display-xl mt-3">
                 Your pass to
                 <br />
                 a good time.
               </h1>
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-soft">
-                Find the night worth leaving the house for — then bring the
-                crew along with one shared plan link.
+                Discover the parties, concerts and experiences worth showing up for.
+                Find your next event, get your ticket, and bring the crew.
               </p>
               <div className="mt-7">
                 <HomeSearch cities={cities} />
+              </div>
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
+                <Link href="/events" className="inline-flex items-center justify-center rounded-card bg-neon-deep px-5 py-3 text-white transition-colors hover:bg-night">Explore events <span aria-hidden="true" className="ml-2">↗</span></Link>
+                <Link href="/host-onboarding" className="inline-flex items-center justify-center rounded-card border border-ink px-5 py-3 text-ink transition-colors hover:bg-ink hover:text-paper">Host an event</Link>
               </div>
             </div>
 
@@ -52,7 +57,7 @@ export default async function HomePage() {
                   description={
                     supabaseConfigured()
                       ? "Events will appear here as soon as hosts publish them."
-                      : "Connect Supabase and run the migrations to load demo events."
+                      : "Event listings will appear here when our first hosts publish them."
                   }
                   action={<ButtonLink href="/host-onboarding">Host the first event</ButtonLink>}
                 />
@@ -67,6 +72,19 @@ export default async function HomePage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      <section aria-label="Explore event locations" className="border-b border-line bg-night text-paper">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-5 sm:px-6">
+          <span className="mr-2 text-xs font-bold uppercase tracking-[.16em] text-white/60">Explore Nigeria</span>
+          {[
+            ["Lagos", "lagos"], ["Abuja", "abuja"], ["Port Harcourt", "port-harcourt"],
+            ["Ibadan", "ibadan"], ["Enugu", "enugu"], ["Kano", "kano"],
+          ].map(([name, slug]) => (
+            <Link key={slug} href={`/events?city=${slug}`} className="rounded-card border border-white/25 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-neon hover:bg-neon-deep">{name} <span aria-hidden="true">↗</span></Link>
+          ))}
+          <Link href="/events" className="ml-auto text-sm font-semibold underline underline-offset-4 hover:text-neon">All locations</Link>
         </div>
       </section>
 
@@ -98,24 +116,60 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Curated collections: varied treatments, not a wall of cards ──── */}
-      <section aria-labelledby="collections-heading">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <p className="eyebrow">Curated</p>
-          <h2 id="collections-heading" className="display-lg mt-2">
-            Made for the way you go out
-          </h2>
+      {/* ── Discovery shortcuts: searches, never fictional event claims ── */}
+      <section aria-labelledby="collections-heading" className="border-b border-line bg-paper-deep">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="eyebrow">Explore your way</p>
+              <h2 id="collections-heading" className="display-lg mt-3 max-w-[15ch]">
+                Find your next good story.
+              </h2>
+            </div>
+            <p className="max-w-[39ch] text-base leading-relaxed text-ink-soft md:pb-1">
+              Find real events across Nigeria by date, price or location.
+              Your next experience starts with a simple search.
+            </p>
+          </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {COLLECTIONS.slice(0, 3).map((c) => (
-              <CollectionTile key={c.slug} href={collectionHref(c.filter)} title={c.title} blurb={c.blurb} accent={c.slug === "tonight-in-lagos"} />
+          <div className="mt-9 grid gap-3 md:grid-cols-3">
+            {COLLECTIONS.map((c, index) => (
+              <Link
+                key={c.slug}
+                href={collectionHref(c.filter)}
+                className={`jp-discovery-tile group flex min-h-[228px] flex-col justify-between p-6 sm:p-7 ${index === 0 ? "jp-discovery-tile-featured" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-[.17em] opacity-70">{c.eyebrow}</span>
+                  <span aria-hidden="true" className="jp-discovery-arrow">↗</span>
+                </div>
+                <div>
+                  <h3 className="font-[family-name:var(--font-fraunces)] text-[clamp(1.75rem,3vw,2.4rem)] font-bold leading-tight tracking-[-.02em]">{c.title}</h3>
+                  <p className="mt-3 max-w-[28ch] text-sm leading-relaxed opacity-80">{c.blurb}</p>
+                </div>
+              </Link>
             ))}
           </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {COLLECTIONS.slice(3).map((c) => (
-              <CollectionTile key={c.slug} href={collectionHref(c.filter)} title={c.title} blurb={c.blurb} wide />
-            ))}
+
+          <div className="mt-7 flex flex-col justify-between gap-4 border-t border-line pt-6 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-bold">Have a city in mind?</p>
+              <p className="mt-1 text-xs text-ink-soft">Explore events in your preferred location.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {cities.slice(0, 5).map((city) => (
+                <Link key={city.slug} href={`/events?city=${encodeURIComponent(city.slug)}`} className="jp-discovery-city">
+                  {city.name}<span aria-hidden="true">↗</span>
+                </Link>
+              ))}
+              <Link href="/events" className="jp-discovery-city jp-discovery-city-all">All events <span aria-hidden="true">↗</span></Link>
+            </div>
           </div>
+          {upcoming.length === 0 && (
+            <p className="mt-6 text-sm text-ink-soft" role="status">
+              Events will appear as organizers publish their listings. These shortcuts search live listings; they are not sample events.
+            </p>
+          )}
         </div>
       </section>
 
@@ -126,7 +180,7 @@ export default async function HomePage() {
             <div>
               <p className="eyebrow">Upcoming</p>
               <h2 id="upcoming-heading" className="display-lg mt-2">
-                Coming up in Lagos
+                Coming up across Nigeria
               </h2>
             </div>
             <Link href="/events" className="text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-neon-deep">
@@ -153,7 +207,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Editorial split: free + budget ───────────────────────────────── */}
-      {(freeEvents.length > 0 || under10k.length > 0) && (
+      {(freeEvents.length > 0 && under10k.length > 0) && (
         <section className="border-t border-line" aria-labelledby="budget-heading">
           <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2">
             <div>
@@ -162,7 +216,7 @@ export default async function HomePage() {
                 Zero naira, still a story
               </h2>
               <div className="mt-5 space-y-3">
-                {(freeEvents.length ? freeEvents : under10k).slice(0, 3).map((e) => (
+                {freeEvents.slice(0, 3).map((e) => (
                   <EventRow key={e.slug} event={e} />
                 ))}
               </div>
@@ -233,30 +287,3 @@ function collectionHref(filter: {
   return `/events?${params.toString()}`;
 }
 
-function CollectionTile({
-  href,
-  title,
-  blurb,
-  wide = false,
-  accent = false,
-}: {
-  href: string;
-  title: string;
-  blurb: string;
-  wide?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group flex flex-col justify-between rounded-card border p-6 transition-colors ${
-        accent
-          ? "border-neon bg-neon text-white hover:bg-neon-deep"
-          : "border-line bg-paper hover:border-ink hover:bg-ink hover:text-paper"
-      } ${wide ? "sm:col-span-1" : ""} min-h-[150px]`}
-    >
-      <h3 className="font-[family-name:var(--font-fraunces)] text-2xl font-bold">{title}</h3>
-      <p className={`mt-2 text-sm ${accent ? "text-white/85" : "opacity-80"}`}>{blurb}</p>
-    </Link>
-  );
-}

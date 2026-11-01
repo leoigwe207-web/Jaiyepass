@@ -85,11 +85,19 @@ export async function createPendingOrder(opts: {
   // The event must be published and on sale.
   const { data: event } = await admin
     .from("events")
-    .select("id, status, organization_id, title")
+    .select("id, status, organization_id, title, is_demo, starts_at")
     .eq("id", eventId)
     .maybeSingle();
 
-  if (!event || event.status !== "published") {
+  // Demo listings are not real events; never issue orders or tickets for them.
+  // Also reject bookings after an event has started.
+  if (
+    !event ||
+    event.status !== "published" ||
+    event.is_demo === true ||
+    !event.starts_at ||
+    new Date(event.starts_at).getTime() <= Date.now()
+  ) {
     return { ok: false, status: 404, error: "This event is not available." };
   }
 
@@ -253,17 +261,25 @@ export async function initializeOrderPayment(opts: {
       console.error("finalize failed", result.error.message);
       return { ok: false, error: "Could not confirm the order." };
     }
+    await deliverReceipt(orderId);
     return { ok: true, testMode: false, authorizationUrl: `/checkout/${orderId}/success` };
   }
 
   if (!paystackSecret) {
-    // Clearly-labelled test mode: no provider call, no real payment, and
+    if (process.env.NODE_ENV === "production") {
+      return { ok: false, error: "Secure paid checkout is not yet configured. Please try again later." };
+    }
+    // Clearly-labelled local-only simulation: no provider call, and
     // finalize is NOT invoked — so no tickets are issued.
     return {
       ok: true,
       testMode: true,
       authorizationUrl: `/checkout/${orderId}?test=1`,
     };
+  }
+
+  if (process.env.VERCEL_ENV === "production" && paystackSecret.startsWith("sk_test_")) {
+    return { ok: false, error: "Test payment keys cannot be used for public ticket sales." };
   }
 
   // Reuse the existing reference if one is stored, so retries don't leave
@@ -325,7 +341,10 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
     .maybeSingle();
 
   if (!order) return { ok: false, error: "Order not found." };
-  if (order.status === "paid") return { ok: true, orderId, status: "already_finalized" };
+  if (order.status === "paid") {
+    await deliverReceipt(orderId);
+    return { ok: true, orderId, status: "already_finalized" };
+  }
   if (order.status === "refunded") return { ok: false, error: "Order was refunded.", orderStatus: order.status };
 
   const reference = order.paystack_reference;
@@ -382,7 +401,7 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
 
   const status = (result?.status as "paid" | "already_finalized") ?? "paid";
 
-  if (status === "paid") {
+  if (status === "paid" || status === "already_finalized") {
     await deliverReceipt(orderId);
   }
 
@@ -390,58 +409,78 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
 }
 
 /**
- * Send the receipt + QR ticket links by email. Idempotent enough for MVP:
- * only called right after the paid transition (finalize is idempotent, and
- * this runs only when finalize reports 'paid').
+ * Sends one email per PAID order with a separate PNG QR attachment per ticket.
+ * The DB claim is atomic and prevents duplicate concurrent sends from Paystack
+ * and the payment-return page. Failed deliveries can be retried; email
+ * transmission never determines whether a verified payment is considered paid.
  */
 export async function deliverReceipt(orderId: string): Promise<void> {
   const admin = createAdminClient();
   const env = serverEnv();
-
-  const { data: order } = await admin
+  if (!env.ticketPepper) {
+    console.error("[ticket-email] no ticket pepper configured");
+    return;
+  }
+  const { data: order, error: readError } = await admin
     .from("orders")
-    .select(
-      `id, total_kobo, paystack_reference, user_id,
+    .select(`id, status, total_kobo, paystack_reference, user_id,
        profile:profiles(email, full_name),
        event:events(title, starts_at, venue:venues(name), city:cities(name)),
-       tickets(id)`,
-    )
+       tickets(id, status)`)
     .eq("id", orderId)
     .maybeSingle();
 
-  if (!order) return;
-
+  if (readError || !order || order.status !== "paid") return;
   const profile = (order as unknown as { profile: { email: string; full_name: string | null } | null }).profile;
-  const email = profile?.email;
-  if (!email) return;
+  const event = (order as unknown as { event: { title: string; starts_at: string } | null }).event;
+  const tickets = (order as unknown as { tickets: { id: string; status: string }[] }).tickets ?? [];
+  if (!profile?.email || !tickets.length || tickets.some((t) => t.status !== "issued")) return;
 
-  const event = (order as unknown as {
-    event: { title: string; starts_at: string; venue: { name: string } | null; city: { name: string } | null } | null;
-  }).event;
+  // Only ONE request can own this send attempt. Uses a 10-minute lease so a
+  // crashed server cannot permanently block delivery. Requires migration 08.
+  const claim = await admin.rpc("claim_ticket_email_delivery", { p_order_id: orderId });
+  if (claim.error || claim.data !== true) {
+    if (claim.error) console.error("[ticket-email] claim failed", claim.error.code);
+    return;
+  }
 
-  const tickets = (order as unknown as { tickets: { id: string }[] }).tickets ?? [];
-
-  const ticketLinks = tickets.map((t) => {
-    const payload = deriveQrPayload(t.id, env.ticketPepper);
-    return `${env.appUrl}/account/tickets?ticket=${encodeURIComponent(payload)}`;
-  });
-
-  const quantity = ticketLinks.length;
-
-  const msg = receiptEmail({
-    to: email,
-    name: profile?.full_name ?? "there",
-    eventTitle: event?.title ?? "your event",
-    startsAt: event ? new Date(event.starts_at).toUTCString() : "",
-    quantity,
-    totalFormatted: formatKobo((order as unknown as { total_kobo: number }).total_kobo, { hideZeroDecimals: true }),
-    reference: (order as unknown as { paystack_reference: string | null }).paystack_reference ?? "",
-    ticketLinks,
-  });
-
-  const result = await sendEmail(msg);
-  if (result.status !== "sent") {
-    console.warn(`[receipt] email not delivered for order ${orderId}: ${result.status}`);
+  try {
+    const QRCode = await import("qrcode");
+    const ticketLinks: string[] = [];
+    const qrAttachments: { filename: string; content: string; content_type: string }[] = [];
+    for (const [index, ticket] of tickets.entries()) {
+      const payload = deriveQrPayload(ticket.id, env.ticketPepper);
+      ticketLinks.push(`${env.appUrl}/account/tickets`);
+      const png = await QRCode.toBuffer(payload, {
+        type: "png", width: 360, margin: 2, errorCorrectionLevel: "M",
+      });
+      qrAttachments.push({
+        filename: `JaiyePass-ticket-${index + 1}.png`,
+        content: png.toString("base64"),
+        content_type: "image/png",
+      });
+    }
+    const msg = receiptEmail({
+      to: profile.email,
+      name: profile.full_name || "there",
+      eventTitle: event?.title || "your event",
+      startsAt: event ? new Date(event.starts_at).toUTCString() : "",
+      quantity: tickets.length,
+      totalFormatted: formatKobo(order.total_kobo, { hideZeroDecimals: true }),
+      reference: order.paystack_reference ?? `order-${orderId}`,
+      ticketLinks,
+      qrAttachments,
+    });
+    const result = await sendEmail(msg);
+    const update = result.status === "sent"
+      ? { status: "sent", provider_message_id: result.providerMessageId ?? null, sent_at: new Date().toISOString(), last_error: null }
+      : { status: "failed", last_error: result.status === "logged" ? "Email provider is not configured" : result.error.slice(0, 160) };
+    const { error } = await admin.from("ticket_email_deliveries").update(update).eq("order_id", orderId);
+    if (error) console.error("[ticket-email] status recording failed", error.code);
+    if (result.status !== "sent") console.warn(`[ticket-email] not sent for order ${orderId}: ${result.status}`);
+  } catch (err) {
+    console.error("[ticket-email] generate/send failed", err instanceof Error ? err.message : "unknown");
+    await admin.from("ticket_email_deliveries").update({ status: "failed", last_error: "QR generation or email provider error" }).eq("order_id", orderId);
   }
 }
 

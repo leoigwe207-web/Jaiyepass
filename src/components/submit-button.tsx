@@ -22,7 +22,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className={`w-full rounded-card px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${styles}`}
+      className={`jp-submit-button w-full rounded-card px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${styles}`}
     >
       {pending ? (pendingLabel ?? "Working…") : label}
     </button>

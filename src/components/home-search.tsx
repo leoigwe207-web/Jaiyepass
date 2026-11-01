@@ -7,7 +7,7 @@ import { useState } from "react";
 export function HomeSearch({ cities }: { cities: { name: string; slug: string }[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
-  const [city, setCity] = useState("lagos");
+  const [city, setCity] = useState("");
 
   return (
     <form
@@ -20,7 +20,7 @@ export function HomeSearch({ cities }: { cities: { name: string; slug: string }[
         if (city) params.set("city", city);
         router.push(`/events?${params.toString()}`);
       }}
-      className="flex flex-col gap-2 sm:flex-row"
+      className="flex flex-col gap-2 sm:flex-row rounded-card border border-white/20 bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,.12)]"
     >
       <div className="relative flex-1">
         <label htmlFor="hero-q" className="sr-only">
@@ -45,15 +45,12 @@ export function HomeSearch({ cities }: { cities: { name: string; slug: string }[
           onChange={(e) => setCity(e.target.value)}
           className="w-full rounded-card border border-line bg-white px-4 py-3.5 text-base"
         >
-          {cities.length > 0 ? (
-            cities.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.name}
-              </option>
-            ))
-          ) : (
-            <option value="lagos">Lagos</option>
-          )}
+          <option value="">All Nigeria</option>
+          {cities.filter((c) => c.slug !== "accra").map((c) => (
+            <option key={c.slug} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </div>
       <button

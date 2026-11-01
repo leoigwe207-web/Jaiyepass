@@ -41,14 +41,14 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
   ]);
 
   const activeCount = [filters.q, filters.city, filters.category, filters.date, filters.price]
-    .filter(Boolean).length;
+    .filter(Boolean).length + (filters.availability ? 1 : 0);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <header>
-        <p className="eyebrow">{filters.city ? "Events" : "All cities"}</p>
+        <p className="eyebrow">{filters.city ? "Events" : "Across Nigeria"}</p>
         <h1 className="display-lg mt-2">
-          {filters.q ? `“${filters.q}”` : "Find your next night out"}
+          {filters.q ? `“${filters.q}”` : "Find your next experience"}
         </h1>
       </header>
 

@@ -10,19 +10,19 @@ const LINKS = [
   { href: "/admin/payouts", label: "Payouts" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/audit", label: "Audit log" },
+  { href: "/admin/emails", label: "Ticket emails" },
 ];
 
-export function AdminNav({ demo = false }: { demo?: boolean }) {
+export function AdminNav() {
   const pathname = usePathname();
-  // Demo sessions only get the sampled review-queue section.
-  const links = demo ? LINKS.slice(0, 1) : LINKS;
+  const links = LINKS;
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-danger">JaiyePass admin</p>
         <p className="mt-0.5 text-sm text-ink-faint">
-          {demo ? "Demo mode · sample data only" : "Moderation, users, payouts"}
+          Moderation, users, payouts
         </p>
       </div>
       <nav aria-label="Admin sections" className="flex flex-wrap gap-1">

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getHostContext } from "@/lib/host";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EventForm, type EventFormDefaults } from "@/components/host/event-form";
+import { EventCoverUploader } from "@/components/host/event-cover-uploader";
 import { updateEventAction } from "@/app/host/actions";
 
 export const metadata: Metadata = { title: "Edit event" };
@@ -19,7 +20,7 @@ export default async function EditEventPage({ params }: Params) {
   const { data: event } = await admin
     .from("events")
     .select(
-      "id, title, tagline, description, city_id, category_id, starts_at, ends_at, doors_open_at, age_guidance, refund_policy, venue:venues(name, address)",
+      "id, title, tagline, description, city_id, category_id, starts_at, ends_at, doors_open_at, age_guidance, refund_policy, image_url, venue:venues(name, address)",
     )
     .eq("id", id)
     .eq("organization_id", orgId)
@@ -59,6 +60,7 @@ export default async function EditEventPage({ params }: Params) {
       <p className="mt-1 mb-6 text-sm text-ink-soft">
         Editing a published event sends it back for a quick review before changes go live.
       </p>
+      <div className="mb-6"><EventCoverUploader eventId={event.id} initialUrl={event.image_url} /></div>
       <EventForm
         action={updateEventAction.bind(null, event.id)}
         cities={cities ?? []}

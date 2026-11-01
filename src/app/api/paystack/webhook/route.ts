@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
  *
  * - The raw body is read FIRST so the HMAC-SHA512 signature can be validated
  *   before any processing. Invalid signatures are rejected with 401.
- * - Every event id is recorded in webhook_events so duplicate deliveries are
- *   acknowledged (200) without reprocessing.
+ * - Every event id is recorded in webhook_events. Only successfully processed
+ *   event IDs are acknowledged as duplicates; failures stay retryable.
  * - charge.success is re-verified against the Paystack API (status, amount,
  *   currency, reference) before finalize_paid_order issues any ticket, and
  *   finalize is idempotent, so a retried webhook can never create extra
@@ -62,12 +62,28 @@ export async function POST(req: Request) {
   });
   if (dupErr) {
     if (dupErr.code === "23505") {
-      return NextResponse.json({ received: true, duplicate: true });
+      const { data: previous } = await admin.from("webhook_events")
+        .select("processed")
+        .eq("provider", "paystack")
+        .eq("provider_event_id", eventId)
+        .maybeSingle();
+      if (previous?.processed) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Previous delivery failed or was interrupted; safely retry.
+    } else {
+      // Fail closed; processing without an idempotency record is unsafe.
+      console.error("[webhook] could not record event", dupErr.code);
+      return NextResponse.json({ error: "Temporary webhook processing failure" }, { status: 503 });
     }
-    // Don't fail closed on unrelated constraint issues — log and continue
-    // verification (verification is itself safe to repeat).
-    console.warn("[webhook] event log insert failed", dupErr.code);
   }
+
+  const markProcessed = async () => {
+    const { error } = await admin.from("webhook_events").update({
+      processed: true, processed_at: new Date().toISOString(), error: null,
+    }).eq("provider", "paystack").eq("provider_event_id", eventId);
+    if (error) throw new Error("Could not record processed webhook");
+  };
 
   try {
     if (eventName === "charge.success") {
@@ -80,17 +96,23 @@ export async function POST(req: Request) {
       // currency against the order, then finalizes idempotently.
       const outcome = await verifyAndFinalizeOrder(orderId);
       if (outcome.ok) {
+        await markProcessed();
         return NextResponse.json({ received: true, status: outcome.status });
       }
-      // Verification failures must be visible to Paystack's retry machinery
-      // only when they look transient; permanent mismatches are logged loud.
+      // Never return success for an unfinalized paid order: Paystack must retry.
+      // Never include provider/payment details in the public error response.
       console.error("[webhook] finalize failed", { reference, error: outcome.error });
-      return NextResponse.json({ received: true, ok: false, error: outcome.error });
+      await admin.from("webhook_events").update({ error: "payment verification or finalization failed" })
+        .eq("provider", "paystack").eq("provider_event_id", eventId);
+      return NextResponse.json({ error: "Payment processing pending" }, { status: 503 });
     }
 
     if (eventName === "refund.processed" || eventName === "refund.success") {
       const refundRef = data.refund?.id ?? data.refund?.reference;
-      if (!refundRef) return NextResponse.json({ received: true });
+      if (!refundRef) {
+        await markProcessed();
+        return NextResponse.json({ received: true });
+      }
 
       const { data: refund } = await admin
         .from("refunds")
@@ -108,7 +130,7 @@ export async function POST(req: Request) {
           expected: refund.amount_kobo,
           got: reportedAmount,
         });
-        return NextResponse.json({ received: true, ok: false, error: "refund amount mismatch" });
+        return NextResponse.json({ error: "refund amount mismatch" }, { status: 422 });
       }
 
       if (refund && refund.status !== "processed") {
@@ -146,14 +168,17 @@ export async function POST(req: Request) {
           );
         }
       }
+      await markProcessed();
       return NextResponse.json({ received: true });
     }
 
     if (eventName === "subscription.create" || eventName === "") {
+      await markProcessed();
       return NextResponse.json({ received: true });
     }
 
     // Unknown events are acknowledged so Paystack stops retrying.
+    await markProcessed();
     return NextResponse.json({ received: true, ignored: eventName });
   } catch (e) {
     console.error("[webhook] handler error", e instanceof Error ? e.message : e);

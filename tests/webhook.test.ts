@@ -78,12 +78,28 @@ describe("Paystack webhook", () => {
   });
 
   it("acknowledges duplicate deliveries without reprocessing", async () => {
-    fromMock.mockReturnValue(chain({ error: { code: "23505" } }));
+    // First lookup is INSERT (unique violation), second is SELECT of the
+    // existing successfully processed event. It must not be finalized again.
+    fromMock
+      .mockReturnValueOnce(chain({ error: { code: "23505" } }))
+      .mockReturnValueOnce(chain({ data: { processed: true } }));
     const res = await post(chargeBody());
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.duplicate).toBe(true);
     expect(verifyAndFinalizeOrder).not.toHaveBeenCalled();
+  });
+
+  it("retries a duplicate event that was not processed successfully", async () => {
+    fromMock
+      .mockReturnValueOnce(chain({ error: { code: "23505" } }))
+      .mockReturnValueOnce(chain({ data: { processed: false } }))
+      .mockReturnValue(chain());
+    const res = await post(chargeBody());
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.status).toBe("paid");
+    expect(verifyAndFinalizeOrder).toHaveBeenCalledWith("order-1");
   });
 
   it("returns 400 when reference/order metadata is missing", async () => {

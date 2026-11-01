@@ -1,12 +1,10 @@
 import "server-only";
 
-/**
- * Curated collections shown on the homepage. Values are used as browse-page
- * filter presets — they are not invented claims about real events.
- */
+/** Each featured shortcut is a real browse filter, not a fictional curation claim. */
 export interface Collection {
   slug: string;
   title: string;
+  eyebrow: string;
   blurb: string;
   filter: {
     city?: string;
@@ -18,33 +16,24 @@ export interface Collection {
 
 export const COLLECTIONS: Collection[] = [
   {
-    slug: "tonight-in-lagos",
-    title: "Tonight in Lagos",
-    blurb: "What's happening before the night ends.",
-    filter: { city: "lagos", date: "today" },
+    slug: "next-seven-days",
+    title: "The next 7 days",
+    eyebrow: "01 / By date",
+    blurb: "See what's coming up soon, wherever you are in Nigeria.",
+    filter: { date: "week" },
   },
   {
-    slug: "for-the-crew",
-    title: "For the crew",
-    blurb: "Group-friendly picks worth a plan link.",
-    filter: { city: "lagos", date: "week" },
-  },
-  {
-    slug: "date-night",
-    title: "Date night",
-    blurb: "Two tickets, low effort, good story.",
-    filter: { city: "lagos", category: "art-culture", date: "week" },
-  },
-  {
-    slug: "free-this-weekend",
-    title: "Free this weekend",
-    blurb: "Zero naira. Still a good time.",
-    filter: { price: "free", date: "weekend" },
+    slug: "free-events",
+    title: "Free admission",
+    eyebrow: "02 / No ticket cost",
+    blurb: "Discover experiences that don't charge for entry.",
+    filter: { price: "free" },
   },
   {
     slug: "under-10000",
     title: "Under ₦10,000",
-    blurb: "Big nights that respect the budget.",
+    eyebrow: "03 / On a budget",
+    blurb: "Browse events with entry tickets priced below ₦10,000.",
     filter: { price: "under10000" },
   },
 ];

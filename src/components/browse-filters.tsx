@@ -133,8 +133,8 @@ export function BrowseFilters({
           onChange={(e) => setParam("city", e.target.value)}
           className="w-full rounded-card border border-line bg-white px-3 py-2 text-sm"
         >
-          <option value="">All cities</option>
-          {cities.map((c) => (
+          <option value="">All Nigeria</option>
+          {cities.filter((c) => c.slug !== "accra").map((c) => (
             <option key={c.slug} value={c.slug}>
               {c.name}
             </option>

@@ -45,7 +45,7 @@ export default async function CheckoutPage({ params }: Params) {
     .select(
       `id, status, subtotal_kobo, discount_kobo, fee_kobo, total_kobo, created_at,
        promo:promo_codes(code),
-       hold:inventory_holds(expires_at, status),
+       hold:inventory_holds!orders_hold_id_fkey(expires_at, status),
        event:events(id, title, slug, starts_at, is_demo, venue:venues(name), city:cities(name)),
        order_items(name_snapshot, unit_price_kobo, quantity)`,
     )
@@ -103,11 +103,7 @@ export default async function CheckoutPage({ params }: Params) {
               ` · ${[order.event.venue?.name, order.event.city?.name].filter(Boolean).join(", ")}`}
           </p>
         )}
-        {order.event?.is_demo && (
-          <p className="mt-2 inline-block rounded-card border border-warning/40 bg-warning/5 px-2 py-0.5 text-xs font-bold text-warning">
-            Demo listing — sample data
-          </p>
-        )}
+
       </div>
 
       <section className="rounded-card border border-line bg-white p-5">

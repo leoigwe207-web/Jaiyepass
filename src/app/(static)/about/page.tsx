@@ -11,9 +11,8 @@ export default function AboutPage() {
       <div className="mt-6 space-y-5 text-[16px] leading-relaxed text-ink-soft">
         <p>
           JaiyePass helps people discover events, make plans with friends, and
-          walk into venues with a secure digital ticket. We start in Lagos — a
-          city with more good nights than calendar space — and we build for
-          phones first, because that is where the plans happen.
+          walk into venues with a secure digital ticket. From Lagos to Abuja, Port Harcourt and beyond, we build for
+          events across Nigeria and for the phones where plans happen.
         </p>
         <p>
           For organizers, JaiyePass is the practical side of running an event:

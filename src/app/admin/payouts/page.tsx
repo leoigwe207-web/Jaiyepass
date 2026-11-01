@@ -34,8 +34,8 @@ export default async function AdminPayoutsPage() {
       <section>
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">Payouts</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          {pending.length} awaiting review. Bank transfers are executed manually — mark as paid once the transfer is
-          confirmed on your side.
+          {pending.length} awaiting review. Approvals do not initiate bank transfers.
+          Completion requires independently verified provider settlement. Paid status cannot be set here.
         </p>
       </section>
 
@@ -70,16 +70,16 @@ export default async function AdminPayoutsPage() {
                   <span className={`inline-block rounded-card border px-2 py-0.5 text-xs font-bold ${status.cls}`}>
                     {status.label}
                   </span>
-                  {p.status !== "paid" && p.status !== "cancelled" && (
+                  {["pending", "approved", "on_hold"].includes(p.status) && (
                     <FieldDecisionForm
                       action={setPayoutStatusAction}
                       fields={{ payoutId: p.id }}
                       options={[
-                        { name: "status", value: "approved", label: "Approve" },
-                        { name: "status", value: "processing", label: "Processing" },
-                        { name: "status", value: "paid", label: "Mark paid", tone: "primary" },
-                        { name: "status", value: "on_hold", label: "Hold", tone: "danger" },
-                        { name: "status", value: "cancelled", label: "Cancel", tone: "danger" },
+                        ...(p.status === "pending" || p.status === "on_hold"
+                          ? [{ name: "status", value: "approved", label: "Approve" }] : []),
+                        ...(p.status !== "on_hold"
+                          ? [{ name: "status", value: "on_hold", label: "Hold", tone: "danger" as const }] : []),
+                        { name: "status", value: "cancelled", label: "Cancel", tone: "danger" as const },
                       ]}
                     />
                   )}

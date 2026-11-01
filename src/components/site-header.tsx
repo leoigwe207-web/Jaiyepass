@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
@@ -12,6 +13,34 @@ const navLinks = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [accountHref, setAccountHref] = useState<string | null>(null);
+
+  // UI hint only: protected routes still verify Supabase identity and the DB role.
+  // Recheck when the path changes because server action sign-in sets cookies.
+  useEffect(() => {
+    let active = true;
+    async function syncSession() {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!active) return;
+        if (!session?.user) {
+          setAccountHref(null);
+          return;
+        }
+        const { data: profile } = await supabase.from("profiles")
+          .select("role").eq("id", session.user.id).maybeSingle();
+        if (active) setAccountHref(profile?.role === "admin" ? "/admin" : "/account/tickets");
+      } catch {
+        if (active) setAccountHref(null);
+      }
+    }
+    void syncSession();
+    return () => { active = false; };
+  }, [pathname]);
+
+  const signInTarget = accountHref ?? "/login";
+  const signInLabel = accountHref === "/admin" ? "Admin dashboard" : accountHref ? "My account" : "Sign in";
 
   // Dashboards render their own chrome.
   if (pathname?.startsWith("/host") || pathname?.startsWith("/admin") || pathname?.startsWith("/scan")) {
@@ -32,28 +61,28 @@ export function SiteHeader() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-ink-soft hover:text-ink"
+              className="jp-nav-link text-sm font-medium text-ink-soft hover:text-ink"
             >
               {l.label}
             </Link>
           ))}
           <Link
             href="/account/tickets"
-            className="text-sm font-medium text-ink-soft hover:text-ink"
+            className="jp-nav-link text-sm font-medium text-ink-soft hover:text-ink"
           >
             My tickets
           </Link>
           <Link
-            href="/login"
-            className="rounded-card bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-night"
+            href={signInTarget}
+            className="jp-primary-action rounded-card bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-night"
           >
-            Sign in
+            {signInLabel}
           </Link>
         </nav>
 
         <button
           type="button"
-          className="md:hidden rounded-card border border-line px-3 py-2 text-sm font-semibold"
+          className="md:hidden rounded-card border border-line px-3 py-2 text-sm font-semibold transition-colors hover:bg-paper-deep"
           aria-expanded={open}
           aria-controls="mobile-nav"
           onClick={() => setOpen((v) => !v)}
@@ -65,7 +94,7 @@ export function SiteHeader() {
       {open && (
         <nav id="mobile-nav" aria-label="Mobile" className="border-t border-line bg-paper px-4 py-4 md:hidden">
           <ul className="flex flex-col gap-3">
-            {[...navLinks, { href: "/account/tickets", label: "My tickets" }, { href: "/login", label: "Sign in" }].map(
+            {[...navLinks, { href: "/account/tickets", label: "My tickets" }, { href: signInTarget, label: signInLabel }].map(
               (l) => (
                 <li key={l.href}>
                   <Link

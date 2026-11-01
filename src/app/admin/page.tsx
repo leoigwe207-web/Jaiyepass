@@ -5,18 +5,14 @@ import { formatDateTime } from "@/lib/format";
 import { formatKobo } from "@/lib/money";
 import { ReviewForm } from "@/components/admin/admin-forms";
 import { reviewEventAction, toggleFeaturedAction } from "@/app/admin/actions";
-import { getDemoUser } from "@/lib/demo";
-import { DemoAdminOverview } from "@/components/demo/dashboards";
 
 export const metadata: Metadata = { title: "Review queue" };
 
 export default async function AdminReviewQueue() {
-  // Preview demo session → sample console, no database access.
-  if (await getDemoUser()) return <DemoAdminOverview />;
 
   const admin = createAdminClient();
 
-  const [{ data: queue }, { count: published }, { data: featuredable }] = await Promise.all([
+  const [{ data: queue, error: queueError }, { count: published, error: publishedError }, { data: featuredable, error: featuredError }, { count: users }, { count: organizers }, { count: paidOrders }, { count: pendingPayouts }] = await Promise.all([
     admin
       .from("events")
       .select(
@@ -25,15 +21,19 @@ export default async function AdminReviewQueue() {
          city:cities(name),
          ticket_types(name, price_kobo, quantity)`,
       )
-      .eq("status", "pending_review")
+      .eq("status", "pending_review").eq("is_demo", false)
       .order("created_at", { ascending: true }),
-    admin.from("events").select("id", { count: "exact", head: true }).eq("status", "published"),
+    admin.from("events").select("id", { count: "exact", head: true }).eq("status", "published").eq("is_demo", false),
     admin
       .from("events")
       .select("id, title, featured")
-      .eq("status", "published")
+      .eq("status", "published").eq("is_demo", false)
       .order("published_at", { ascending: false })
       .limit(12),
+    admin.from("profiles").select("id", { head: true, count: "exact" }),
+    admin.from("organizations").select("id", { head: true, count: "exact" }),
+    admin.from("orders").select("id", { head: true, count: "exact" }).eq("status", "paid"),
+    admin.from("payouts").select("id", { head: true, count: "exact" }).eq("status", "pending"),
   ]);
 
   return (
@@ -45,6 +45,15 @@ export default async function AdminReviewQueue() {
         </p>
       </section>
 
+      {(queueError || publishedError || featuredError) && <p role="alert" className="text-sm font-semibold text-danger">Admin data could not be loaded. Check Supabase configuration and server logs.</p>}
+      <section aria-label="Platform overview" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[ ["Users", users], ["Organizers", organizers], ["Paid orders", paidOrders], ["Pending payouts", pendingPayouts] ].map(([label, count]) => (
+          <div key={String(label)} className="rounded-card border border-line bg-white p-4">
+            <p className="text-xs font-semibold text-ink-faint">{label}</p>
+            <p className="mt-2 text-2xl font-extrabold">{count ?? "—"}</p>
+          </div>
+        ))}
+      </section>
       <section>
         {(!queue || queue.length === 0) ? (
           <p className="text-sm text-ink-faint">Nothing waiting for review. 🎉</p>

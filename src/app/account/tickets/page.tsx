@@ -5,10 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveQrPayload } from "@/lib/ticket-token";
 import { serverEnv } from "@/lib/env";
 import { formatDateRange } from "@/lib/format";
-import { EmptyState, DemoBadge } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { QRTicket } from "@/components/qr-ticket";
-import { getDemoUser } from "@/lib/demo";
-import { DemoAttendeeTickets } from "@/components/demo/dashboards";
 
 export const metadata: Metadata = { title: "My tickets" };
 export const dynamic = "force-dynamic";
@@ -33,8 +31,6 @@ interface TicketRow {
 }
 
 export default async function MyTicketsPage() {
-  // Preview demo session → sample ticket wallet, no database access.
-  if (await getDemoUser()) return <DemoAttendeeTickets />;
 
   const user = await requireUser();
   const supabase = await createClient();
@@ -128,7 +124,7 @@ export default async function MyTicketsPage() {
                     Entered {formatDateRange(t.used_at, t.used_at)}
                   </p>
                 )}
-                {t.event?.is_demo && <DemoBadge />}
+
                 <Link
                   href={`/account/orders?event=${t.event?.slug ?? ""}`}
                   className="block text-neon-deep underline underline-offset-2"

@@ -1,0 +1,20 @@
+JaiyePass TypeScript + Vitest fix (source-only overlay)
+
+Fixes from Oct 26:
+- SampleEvent.featured field typing, fixing TS2339.
+- Checkout test mock events now include future starts_at + is_demo=false, matching server safety checks.
+- Webhook duplicate delivery test mocks the existing processed event correctly.
+- Regression tests for demo/started event restrictions and retryable webhooks.
+
+Apply:
+1) Extract this zip into the EXISTING JaiyePass project folder, preserving subfolders.
+   In PowerShell:
+   Expand-Archive -Path "$HOME\Downloads\JaiyePass-Typecheck-Test-Fixes.zip" -DestinationPath "C:\Users\David\Documents\JaiyePass" -Force
+2) Do not replace the supabase/migrations folder (it is intentionally absent).
+3) Run:
+   npm.cmd run typecheck
+   npm.cmd test
+   npm.cmd run build
+4) Do NOT run npm audit fix --force blindly, and do not deploy until any failing checks are resolved.
+
+These are source/test fixes only. Full automated Vitest & Next.js build could not run in this environment because npm dependencies are not cached. The existing project smoke script passed 19 static checks.

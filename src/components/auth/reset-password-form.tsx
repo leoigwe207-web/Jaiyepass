@@ -1,52 +1,29 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { resetPasswordAction, type AuthFormState } from "@/app/(auth)/actions";
 import { SubmitButton } from "@/components/submit-button";
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ notice }: { notice?: string }) {
   const [state, formAction] = useActionState<AuthFormState, FormData>(resetPasswordAction, {});
-
-  if (state.message) {
-    return (
-      <div role="status" className="rounded-card border border-success/30 bg-success/5 p-5">
-        <p className="font-semibold text-success">Reset link requested</p>
-        <p className="mt-1 text-sm text-ink-soft">{state.message}</p>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <h1 className="display-md">Reset your password</h1>
-      <p className="mt-2 text-sm text-ink-soft">
-        We'll email you a secure link to set a new password.
-      </p>
-
-      <form action={formAction} className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-semibold">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            maxLength={254}
-            className="w-full rounded-card border border-line bg-white px-3 py-2.5 text-sm"
-          />
-        </div>
-
-        {state.error && (
-          <p role="alert" className="rounded-card border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
-            {state.error}
-          </p>
-        )}
-
-        <SubmitButton label="Send reset link" pendingLabel="Sending…" />
-      </form>
+    <div className="auth-form-panel">
+      <p className="auth-kicker"><span className="auth-kicker-dot"/> ACCOUNT RECOVERY</p>
+      <h1 className="auth-title">Back in no time.</h1>
+      <p className="auth-description">Enter your email address and we’ll send a secure link to reset your password.</p>
+      {notice ? <p role="alert" className="auth-notice auth-notice-error mt-6">{notice}</p> : null}
+      {state.message ? <p role="status" className="auth-notice auth-notice-success mt-7">{state.message}</p> : (
+        <form action={formAction} className="auth-form">
+          <div className="auth-field">
+            <label htmlFor="email" className="auth-label">Email address</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required autoComplete="email" maxLength={254} className="auth-input" />
+          </div>
+          {state.error ? <p role="alert" className="auth-notice auth-notice-error">{state.error}</p> : null}
+          <SubmitButton label="Email me a reset link" pendingLabel="Sending link…" />
+        </form>
+      )}
+      <p className="auth-under-form"><Link href="/login" className="auth-text-link">Back to sign in</Link></p>
     </div>
   );
 }

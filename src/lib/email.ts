@@ -15,6 +15,7 @@ export interface EmailMessage {
   subject: string;
   text: string;
   html?: string;
+  attachments?: { filename: string; content: string; content_type: string }[];
 }
 
 export type EmailResult =
@@ -46,6 +47,7 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
         subject: msg.subject,
         text: msg.text,
         html: msg.html,
+        attachments: msg.attachments,
       }),
       cache: "no-store",
     });
@@ -71,6 +73,7 @@ export function receiptEmail(opts: {
   totalFormatted: string;
   reference: string;
   ticketLinks: string[];
+  qrAttachments?: { filename: string; content: string; content_type: string }[];
 }) {
   const lines = [
     `Hi ${opts.name},`,
@@ -84,7 +87,7 @@ export function receiptEmail(opts: {
     `Your tickets:`,
     ...opts.ticketLinks.map((l, i) => `  Ticket ${i + 1}: ${l}`),
     ``,
-    `Show the QR code at the gate. Do not share this link publicly.`,
+    `Each QR code is attached as a PNG image. Show the QR at the gate. Do not share or forward your codes.`,
     ``,
     `— JaiyePass`,
   ];
@@ -92,6 +95,7 @@ export function receiptEmail(opts: {
     to: opts.to,
     subject: `Tickets confirmed: ${opts.eventTitle}`,
     text: lines.join("\n"),
+    attachments: opts.qrAttachments,
   };
 }
 

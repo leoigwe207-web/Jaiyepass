@@ -1,55 +1,57 @@
 import "server-only";
 import { requireUser, getManagedOrgId, type SessionUser } from "./auth";
 import { createAdminClient } from "./supabase/admin";
+import { safeAmountKobo } from "./payout-safety";
 
-/** Host dashboard context: the signed-in user and the org they manage. */
-export async function getHostContext(): Promise<{
-  user: SessionUser;
-  orgId: string | null;
-}> {
+export async function getHostContext(): Promise<{ user: SessionUser; orgId: string | null }> {
   const user = await requireUser();
   const orgId = await getManagedOrgId(user.id);
   return { user, orgId };
 }
 
 /**
- * Available payout balance for an organization, in kobo:
- * paid order totals − processed refunds − payouts already queued/paid.
+ * The ONLY withdrawable amount is verified, reconciled money in the ledger,
+ * less outstanding payout reservations. Never infer withdrawability from
+ * total checkout charges, pending provider settlement or net sales.
  */
 export async function getOrgBalance(orgId: string): Promise<{
   grossKobo: number;
+  ticketRevenueKobo: number;
+  checkoutFeesKobo: number;
   refundedKobo: number;
   paidOutKobo: number;
+  reservedKobo: number;
+  processorFeesKobo: number;
+  platformFeesKobo: number;
   availableKobo: number;
+  settledNetKobo: number;
+  paidOrderCount: number;
+  ledgerReady: boolean;
 }> {
+  const empty = {
+    grossKobo: 0, ticketRevenueKobo: 0, checkoutFeesKobo: 0,
+    refundedKobo: 0, paidOutKobo: 0, reservedKobo: 0,
+    processorFeesKobo: 0, platformFeesKobo: 0,
+    availableKobo: 0, settledNetKobo: 0,
+    paidOrderCount: 0, ledgerReady: false,
+  };
   const admin = createAdminClient();
-
-  const [{ data: paid }, { data: refunds }, { data: payouts }] = await Promise.all([
-    admin
-      .from("orders")
-      .select("total_kobo, events!inner(organization_id)")
-      .eq("status", "paid")
-      .eq("events.organization_id", orgId),
-    admin
-      .from("refunds")
-      .select("amount_kobo, status, orders!inner(events(organization_id))")
-      .eq("status", "processed")
-      .eq("orders.events.organization_id", orgId),
-    admin
-      .from("payouts")
-      .select("amount_kobo, status")
-      .eq("organization_id", orgId)
-      .in("status", ["pending", "approved", "processing", "paid"]),
-  ]);
-
-  const grossKobo = (paid ?? []).reduce((sum, o) => sum + (o.total_kobo as number), 0);
-  const refundedKobo = (refunds ?? []).reduce((sum, r) => sum + (r.amount_kobo as number), 0);
-  const paidOutKobo = (payouts ?? []).reduce((sum, p) => sum + (p.amount_kobo as number), 0);
-
+  const { data, error } = await admin.rpc("get_org_finance_snapshot", { p_org_id: orgId });
+  // Fail closed until a reviewed migration creates the ledger RPC.
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) return empty;
+  const v = data as Record<string, unknown>;
   return {
-    grossKobo,
-    refundedKobo,
-    paidOutKobo,
-    availableKobo: Math.max(0, grossKobo - refundedKobo - paidOutKobo),
+    grossKobo: safeAmountKobo(v.gross_kobo),
+    ticketRevenueKobo: safeAmountKobo(v.ticket_revenue_kobo),
+    checkoutFeesKobo: safeAmountKobo(v.checkout_fees_kobo),
+    refundedKobo: safeAmountKobo(v.refunded_kobo),
+    paidOutKobo: safeAmountKobo(v.paid_out_kobo),
+    reservedKobo: safeAmountKobo(v.reserved_kobo),
+    processorFeesKobo: safeAmountKobo(v.processor_fees_kobo),
+    platformFeesKobo: safeAmountKobo(v.platform_fees_kobo),
+    availableKobo: safeAmountKobo(v.available_kobo),
+    settledNetKobo: safeAmountKobo(v.settled_net_kobo),
+    paidOrderCount: safeAmountKobo(v.paid_order_count),
+    ledgerReady: true,
   };
 }

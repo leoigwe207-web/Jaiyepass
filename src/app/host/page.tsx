@@ -5,14 +5,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatKobo } from "@/lib/money";
 import { formatDateTime } from "@/lib/format";
 import { OrgForm } from "@/components/host/org-form";
-import { getDemoUser } from "@/lib/demo";
-import { DemoHostOverview } from "@/components/demo/dashboards";
 
 export const metadata: Metadata = { title: "Overview" };
 
 export default async function HostOverviewPage() {
-  // Preview demo session → sample organizer dashboard, no database access.
-  if (await getDemoUser()) return <DemoHostOverview />;
 
   const { user, orgId } = await getHostContext();
 
@@ -95,14 +91,20 @@ export default async function HostOverviewPage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Gross sales" value={formatKobo(balance.grossKobo, { hideZeroDecimals: true })} />
-        <StatCard label="Refunded" value={formatKobo(balance.refundedKobo, { hideZeroDecimals: true })} />
+        <StatCard label="Gross sales" value={balance.ledgerReady ? formatKobo(balance.grossKobo, { hideZeroDecimals: true }) : "Pending reconciliation"} />
+        <StatCard label="Refunded" value={balance.ledgerReady ? formatKobo(balance.refundedKobo, { hideZeroDecimals: true }) : "Pending reconciliation"} />
         <StatCard
-          label="Available to withdraw"
-          value={formatKobo(balance.availableKobo, { hideZeroDecimals: true })}
+          label="Reconciled balance"
+          value={balance.ledgerReady ? formatKobo(balance.availableKobo, { hideZeroDecimals: true }) : "Unavailable"}
           highlight
         />
       </section>
+
+      {!balance.ledgerReady && (
+        <p role="status" className="rounded-card border border-warning/40 bg-warning/5 p-4 text-sm text-ink-soft">
+          Financial ledger setup is pending. Withdrawable balances are temporarily unavailable; no payout is permitted.
+        </p>
+      )}
 
       {pendingRefunds && pendingRefunds.length > 0 && (
         <section className="rounded-card border border-warning/40 bg-warning/5 p-5">
@@ -121,7 +123,7 @@ export default async function HostOverviewPage() {
             })}
           </ul>
           <p className="mt-2 text-sm">
-            Review them from the event&apos;s page — payouts wait for nothing, but refunds are owed promptly.
+            Review them from the event&apos;s page — Refunds and disputes may affect payout eligibility. Their settlement must be reconciled before withdrawal.
           </p>
         </section>
       )}

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { canManuallyChangePayout } from "@/lib/payout-safety";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, getSessionUser } from "@/lib/auth";
@@ -38,12 +39,18 @@ export async function reviewEventAction(_prev: AdminActionState, formData: FormD
   const status = parsed.data.decision === "approve" ? "published" : "rejected";
   const { data: event } = await ctx.admin
     .from("events")
-    .select("id, status, title")
+    .select("id, status, title, org:organizations(verification)")
     .eq("id", parsed.data.eventId)
     .maybeSingle();
   if (!event) return { error: "Event not found." };
   if (event.status !== "pending_review" && event.status !== "approved") {
     return { error: "That event is not awaiting review." };
+  }
+
+  // Only verified organizers may go live; keep review workflow explicit.
+  const org = event.org as unknown as { verification: string } | null;
+  if (status === "published" && org?.verification !== "verified") {
+    return { error: "Verify this organizer before publishing their event." };
   }
 
   const { error } = await ctx.admin
@@ -86,6 +93,10 @@ export async function setUserRoleAction(_prev: AdminActionState, formData: FormD
     role: String(formData.get("role") ?? ""),
   });
   if (!parsed.success) return { error: "Invalid role change." };
+
+  if (parsed.data.userId === ctx.user.id && parsed.data.role !== "admin") {
+    return { error: "You cannot remove your own administrator access." };
+  }
 
   const { error } = await ctx.admin.from("profiles").update({ role: parsed.data.role }).eq("id", parsed.data.userId);
   if (error) {
@@ -149,7 +160,7 @@ export async function setOrgVerificationAction(_prev: AdminActionState, formData
 
 const payoutSchema = z.object({
   payoutId: z.string().uuid(),
-  status: z.enum(["approved", "processing", "paid", "cancelled", "on_hold"]),
+  status: z.enum(["approved", "cancelled", "on_hold"]),
 });
 
 export async function setPayoutStatusAction(_prev: AdminActionState, formData: FormData): Promise<AdminActionState> {
@@ -168,8 +179,11 @@ export async function setPayoutStatusAction(_prev: AdminActionState, formData: F
     .eq("id", parsed.data.payoutId)
     .maybeSingle();
   if (!payout) return { error: "Payout not found." };
+  if (!canManuallyChangePayout(payout.status, parsed.data.status)) {
+    return { error: "Invalid transition. Completed bank transfers must be confirmed from Paystack or independently verified settlement records." };
+  }
 
-  const { error } = await ctx.admin
+  const { data: changed, error } = await ctx.admin
     .from("payouts")
     .update({
       status: parsed.data.status,
@@ -179,10 +193,13 @@ export async function setPayoutStatusAction(_prev: AdminActionState, formData: F
         { at: new Date().toISOString(), to: parsed.data.status, via: "admin" },
       ] as never,
     })
-    .eq("id", payout.id);
+    .eq("id", payout.id)
+    .eq("status", payout.status)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
-    console.error("payout update failed", error.code);
+  if (error || !changed) {
+    console.error("payout update failed", error?.code ?? "concurrent modification");
     return { error: "Could not update the payout." };
   }
 
@@ -293,4 +310,21 @@ export async function toggleFeaturedAction(eventId: string): Promise<AdminAction
 export async function getAdminEmail(): Promise<string | null> {
   const user = await getSessionUser();
   return user?.email ?? null;
+}
+
+
+/** Retry a failed email only for a verified paid order. */
+export async function retryTicketEmailAction(_prev: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  const ctx = await adminCtx();
+  if (!ctx) return { error: "Not authorized or too many attempts." };
+  const orderId = String(formData.get("orderId") ?? "");
+  if (!z.string().uuid().safeParse(orderId).success) return { error: "Invalid order." };
+  const { data: delivery } = await ctx.admin.from("ticket_email_deliveries")
+    .select("order_id, status").eq("order_id", orderId).maybeSingle();
+  if (!delivery || delivery.status !== "failed") return { error: "Only failed email attempts can be retried." };
+  const { deliverReceipt } = await import("@/lib/checkout");
+  await deliverReceipt(orderId);
+  await writeAuditLog({ actorId: ctx.user.id, action: "ticket_email.retry_requested", entityType: "order", entityId: orderId });
+  revalidatePath("/admin/emails");
+  return { ok: true };
 }

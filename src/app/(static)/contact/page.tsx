@@ -25,7 +25,7 @@ export default function ContactPage() {
           </div>
           <div>
             <h2 className="eyebrow">Office</h2>
-            <p className="mt-1 text-ink-soft">Victoria Island, Lagos, Nigeria</p>
+            <p className="mt-1 text-ink-soft">Lagos, Nigeria</p>
           </div>
           <p className="text-xs text-ink-faint">
             For order-specific issues, include your order reference — never send

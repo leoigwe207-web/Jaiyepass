@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime } from "@/lib/format";
 import { formatKobo } from "@/lib/money";
 import { TicketTypeForm, PromoForm, ScannerForm } from "@/components/host/host-forms";
+import { EventCoverUploader } from "@/components/host/event-cover-uploader";
 import {
   SubmitForReviewButton,
   CancelEventButton,
@@ -40,13 +41,13 @@ export default async function HostEventPage({ params }: Params) {
   const { data: event } = await admin
     .from("events")
     .select(
-      `id, title, slug, status, starts_at, ends_at, is_demo, review_note,
+      `id, title, slug, status, starts_at, ends_at, is_demo, review_note, image_url,
        venue:venues(name, address), city:cities(name)`,
     )
     .eq("id", id)
     .eq("organization_id", orgId)
     .maybeSingle();
-  if (!event) notFound();
+  if (!event || event.is_demo) notFound();
 
   const [{ data: ticketTypes }, { data: promos }, { data: scanners }, { data: refunds }, { data: orders }] =
     await Promise.all([
@@ -92,11 +93,7 @@ export default async function HostEventPage({ params }: Params) {
             <span className="rounded-card border border-line bg-paper px-2 py-0.5 text-xs font-bold capitalize">
               {event.status.replace("_", " ")}
             </span>
-            {event.is_demo && (
-              <span className="rounded-card border border-warning/40 bg-warning/5 px-2 py-0.5 text-xs font-bold text-warning">
-                Demo listing
-              </span>
-            )}
+
           </div>
           <p className="mt-1 text-sm text-ink-soft">
             {formatDateTime(event.starts_at)} ·
@@ -149,6 +146,8 @@ export default async function HostEventPage({ params }: Params) {
           </div>
         </div>
       </section>
+
+      <EventCoverUploader eventId={event.id} initialUrl={event.image_url} />
 
       <section>
         <h2 className="font-[family-name:var(--font-fraunces)] text-2xl font-bold">Tickets</h2>

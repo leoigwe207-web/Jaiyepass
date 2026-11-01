@@ -40,6 +40,7 @@ export default async function HostEventsPage() {
        ticket_types(price_kobo, quantity, sold_count, status)`,
     )
     .eq("organization_id", orgId)
+    .eq("is_demo", false)
     .order("starts_at", { ascending: false });
 
   const rows = (events ?? []).map((e) => {
@@ -81,11 +82,7 @@ export default async function HostEventsPage() {
                     <span className={`rounded-card border px-2 py-0.5 text-xs font-bold ${status.cls}`}>
                       {status.label}
                     </span>
-                    {e.is_demo && (
-                      <span className="rounded-card border border-warning/40 bg-warning/5 px-2 py-0.5 text-xs font-bold text-warning">
-                        Demo
-                      </span>
-                    )}
+
                   </div>
                   <p className="mt-1 text-xs text-ink-faint">
                     {formatDateTime(e.starts_at)}

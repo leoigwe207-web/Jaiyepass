@@ -758,6 +758,9 @@ export async function requestPayoutAction(_prev: ActionState, formData: FormData
   if (amountKobo <= 0) return { error: "Enter an amount to withdraw." };
 
   const balance = await getOrgBalance(membership.organization_id);
+  if (!balance.ledgerReady) {
+    return { error: "Payout requests are not enabled until financial reconciliation is configured." };
+  }
   if (amountKobo > balance.availableKobo) {
     return {
       error: `That is more than your available balance of ${formatKobo(balance.availableKobo, { hideZeroDecimals: true })}.`,
@@ -774,12 +777,13 @@ export async function requestPayoutAction(_prev: ActionState, formData: FormData
     return { error: "Add your bank payout details to your organizer profile first." };
   }
 
-  const { error } = await admin.from("payouts").insert({
-    organization_id: membership.organization_id,
-    amount_kobo: amountKobo,
-    status: "pending",
-    reason: `Requested by ${user.email}`,
-    status_history: [{ at: new Date().toISOString(), to: "pending", via: "host" }] as never,
+  // The RPC locks the organization row and checks settled ledger funds +
+  // existing reservations in ONE database transaction. Two simultaneous
+  // requests can never spend the same available balance.
+  const { data: payoutId, error } = await admin.rpc("request_organizer_payout", {
+    p_org_id: membership.organization_id,
+    p_requester: user.id,
+    p_amount_kobo: amountKobo,
   });
 
   if (error) {
@@ -791,6 +795,7 @@ export async function requestPayoutAction(_prev: ActionState, formData: FormData
     actorId: user.id,
     action: "payout.requested",
     entityType: "payout",
+    entityId: String(payoutId),
     metadata: { organizationId: membership.organization_id, amountKobo },
   });
 

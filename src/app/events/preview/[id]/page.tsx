@@ -56,11 +56,7 @@ export default async function EventPreviewPage({ params }: Params) {
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">{event.title}</h1>
         {event.tagline && <p className="mt-1 text-lg text-ink-soft">{event.tagline}</p>}
-        {event.is_demo && (
-          <p className="mt-2 inline-block rounded-card border border-warning/40 bg-warning/5 px-2 py-0.5 text-xs font-bold text-warning">
-            Demo listing
-          </p>
-        )}
+
 
         <dl className="mt-4 space-y-1 text-sm text-ink-soft">
           <div className="flex gap-2">

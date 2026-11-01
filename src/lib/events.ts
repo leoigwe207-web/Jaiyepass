@@ -14,8 +14,3 @@ export type EventCardData = {
   venue_name?: string | null;
   availability?: "available" | "few" | "sold_out" | "closed";
 };
-
-/** Demo artwork served as local SVG posters — clearly stylised, not real photos. */
-export function demoPoster(slug: string): string {
-  return `/demo/${slug}.svg`;
-}

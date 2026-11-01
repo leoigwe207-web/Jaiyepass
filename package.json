@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:env": "node scripts/check-release-env.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -16,11 +17,13 @@
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "next": "^15.5.4",
+    "posthog-js": "1.438.13",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "server-only": "^0.0.1",
-    "zod": "^3.25.76"
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "1.20.12",
@@ -34,5 +37,10 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "wrangler": "4.148.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.23"
+    }
   }
 }

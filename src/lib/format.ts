@@ -20,8 +20,9 @@ export function formatDateTime(iso: string | Date): string {
   return `${formatDate(iso)} · ${formatTime(iso)}`;
 }
 
-export function formatDateRange(startIso: string, endIso: string): string {
+export function formatDateRange(startIso: string, endIso: string | null | undefined): string {
   const s = new Date(startIso);
+  if (!endIso) return formatDateTime(s);
   const e = new Date(endIso);
   const sameDay = s.toDateString() === e.toDateString();
   if (sameDay) return `${formatDate(s)}, ${formatTime(s)} – ${formatTime(e)}`;

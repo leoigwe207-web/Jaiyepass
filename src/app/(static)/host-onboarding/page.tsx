@@ -32,7 +32,7 @@ export default function HostOnboardingPage() {
       <p className="eyebrow">For organizers</p>
       <h1 className="display-lg mt-2">Sell tickets. Run the gate. Know your numbers.</h1>
       <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-ink-soft">
-        JaiyePass gives Lagos organizers what they actually need: secure
+        JaiyePass gives organizers across Nigeria the tools they actually need: secure
         Paystack checkout, honest inventory that can't oversell, a guest list
         you can search, and check-in that works on any phone at the gate.
       </p>

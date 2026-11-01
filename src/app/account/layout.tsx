@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getDemoUser } from "@/lib/demo";
 import { LogoutButton } from "@/components/logout-button";
 
 const tabs = [
@@ -12,10 +11,8 @@ const tabs = [
 ];
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const demo = await getDemoUser();
-  const user = demo ? { fullName: demo.label, email: demo.email } : await requireUser();
-  // Demo sessions only get the sampled "My tickets" tab.
-  const visibleTabs = demo ? tabs.filter((t) => t.href === "/account/tickets") : tabs;
+  const user = await requireUser("/account/tickets");
+  const visibleTabs = tabs;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -24,7 +21,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
           <p className="eyebrow">Your account</p>
           <h1 className="display-md mt-1">{user.fullName ?? "Your space"}</h1>
         </div>
-        <LogoutButton demo={!!demo} />
+        <LogoutButton />
       </div>
 
       <nav aria-label="Account sections" className="mt-6 border-b border-line">

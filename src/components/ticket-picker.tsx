@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatKobo } from "@/lib/money";
+import { trackCheckoutStarted } from "@/lib/analytics/events";
 import type { TicketTypeOption } from "@/components/ticket-picker-types";
 
 /**
@@ -57,6 +58,12 @@ export function TicketPicker({
         setSubmitting(false);
         return;
       }
+      // The order exists now — count the action, never the abandoned attempts.
+      trackCheckoutStarted({
+        eventId,
+        ticketQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+        totalKobo: total,
+      });
       router.push(`/checkout/${json.orderId}`);
     } catch {
       setError("Network error — check your connection and try again.");

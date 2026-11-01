@@ -308,5 +308,5 @@ returns text
 language sql
 immutable
 as $$
-  select encode(digest(p_token, 'sha256'), 'hex');
+  select encode(extensions.digest(p_token, 'sha256'), 'hex');
 $$;

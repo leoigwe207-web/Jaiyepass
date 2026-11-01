@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="display-md text-ink">Questions</h2>
-          <p className="mt-2">privacy@jaiyepass.com · Victoria Island, Lagos, Nigeria.</p>
+          <p className="mt-2">privacy@jaiyepass.com · Lagos, Nigeria.</p>
         </section>
       </div>
     </article>

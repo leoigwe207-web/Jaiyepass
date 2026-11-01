@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/format";
 import { formatKobo } from "@/lib/money";
-import { Badge, DemoBadge, EventImage } from "./ui";
+import { Badge, EventImage } from "./ui";
 
 export interface EventCardDatum {
   id: string;
@@ -28,14 +28,16 @@ function availabilityBadge(a?: EventCardDatum["availability"]) {
 /** Standard card for grids — compact, scannable, price-first on mobile. */
 export function EventCard({ event }: { event: EventCardDatum }) {
   const price =
-    event.is_free || !event.price_min_kobo
+    event.price_min_kobo === 0
       ? "Free"
-      : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`;
+      : event.price_min_kobo == null
+        ? "See tickets"
+        : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`;
 
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group flex flex-col overflow-hidden rounded-card border border-line bg-white transition-shadow hover:shadow-[0_8px_30px_rgba(22,18,14,0.12)]"
+      className="jp-interactive-card group flex flex-col overflow-hidden rounded-card border border-line bg-white transition-shadow hover:shadow-[0_8px_30px_rgba(22,18,14,0.12)]"
     >
       <div className="relative aspect-[3/2] overflow-hidden bg-night">
         <EventImage
@@ -45,7 +47,6 @@ export function EventCard({ event }: { event: EventCardDatum }) {
           className="transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute left-3 top-3 flex gap-2">
-          {event.is_demo && <DemoBadge />}
         </div>
         <div className="absolute bottom-3 right-3">
           <span className="rounded-card bg-paper px-2 py-1 text-xs font-bold text-ink">
@@ -80,7 +81,7 @@ export function EventFeature({ event, size = "lg" }: { event: EventCardDatum; si
   return (
     <Link
       href={`/events/${event.slug}`}
-      className={`group relative block overflow-hidden rounded-card border border-line bg-night ${aspect}`}
+      className={`jp-interactive-card group relative block overflow-hidden rounded-card border border-line bg-night ${aspect}`}
     >
       <EventImage
         src={event.image_url}
@@ -92,7 +93,6 @@ export function EventFeature({ event, size = "lg" }: { event: EventCardDatum; si
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-5 md:p-8">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          {event.is_demo && <DemoBadge />}
           {availabilityBadge(event.availability)}
         </div>
         <p className="text-xs font-semibold uppercase tracking-wider text-neon">
@@ -110,9 +110,11 @@ export function EventFeature({ event, size = "lg" }: { event: EventCardDatum; si
           <p className="mt-1 max-w-xl text-sm text-white/85 line-clamp-2">{event.tagline}</p>
         )}
         <p className="mt-3 inline-block rounded-card bg-neon px-3 py-1.5 text-sm font-bold text-white">
-          {event.is_free || !event.price_min_kobo
+          {event.price_min_kobo === 0
             ? "Free entry"
-            : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`}
+            : event.price_min_kobo == null
+              ? "See tickets"
+              : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`}
         </p>
       </div>
     </Link>
@@ -124,7 +126,7 @@ export function EventRow({ event }: { event: EventCardDatum }) {
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group flex gap-4 rounded-card border border-line bg-white p-3 transition-shadow hover:shadow-[0_6px_20px_rgba(22,18,14,0.10)]"
+      className="jp-interactive-card group flex gap-4 rounded-card border border-line bg-white p-3 transition-shadow hover:shadow-[0_6px_20px_rgba(22,18,14,0.10)]"
     >
       <div className="h-24 w-24 shrink-0 overflow-hidden rounded-card bg-night sm:h-28 sm:w-36">
         <EventImage src={event.image_url} alt={event.title} title={event.title} />
@@ -141,11 +143,12 @@ export function EventRow({ event }: { event: EventCardDatum }) {
         </p>
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold">
-            {event.is_free || !event.price_min_kobo
+            {event.price_min_kobo === 0
               ? "Free"
-              : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`}
+              : event.price_min_kobo == null
+                ? "See tickets"
+                : `From ${formatKobo(event.price_min_kobo, { hideZeroDecimals: true })}`}
           </span>
-          {event.is_demo && <DemoBadge />}
         </div>
       </div>
     </Link>

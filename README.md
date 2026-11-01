@@ -46,8 +46,8 @@ supabase link --project-ref <your-ref>
 supabase db push          # applies supabase/migrations/0001 → 0005 in order
 
 # Option B — SQL editor: paste each file in order:
-#   0001_setup.sql → 0002_tables.sql → 0003_functions.sql
-#   0004_rls.sql   → 0005_seed.sql
+#   20261026090101_setup.sql → 20261026090102_tables.sql → 20261026090103_functions.sql
+#   20261026090104_rls.sql   → 20261026090105_seed.sql
 ```
 
 Seeding loads Lagos cities, categories, venues and demo events (flagged `is_demo` in the UI).
@@ -105,3 +105,9 @@ Key API routes: `/api/checkout`, `/api/checkout/pay`, `/api/checkout/promo`,
 ## License
 
 Private — all rights reserved (unless otherwise agreed with the client).
+
+## V2 upgrade package
+
+See [`docs/V2-RELEASE-READINESS.md`](docs/V2-RELEASE-READINESS.md) and [`design.md`](design.md). This update adds a read-only, clearly labelled demo browsing experience when Supabase is not configured, Nigeria-wide search defaults, improved discovery, local demo poster artwork, and additive security/city migrations.
+
+**Security:** Apply the reviewed `20261026090106_harden_rpc.sql` after the initial migrations, before exposing a database-backed build. Never enable Paystack live keys without end-to-end test verification. Production setup requires configured secrets and a shared rate-limit backend; the current per-instance limiter is not sufficient for production.

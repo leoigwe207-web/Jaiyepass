@@ -5,7 +5,7 @@ const columns = [
     heading: "Discover",
     links: [
       { href: "/events", label: "Browse events" },
-      { href: "/events?date=today", label: "Tonight in Lagos" },
+      { href: "/events?date=today", label: "Events happening today" },
       { href: "/events?price=free", label: "Free this weekend" },
       { href: "/collections", label: "Collections" },
     ],
@@ -38,8 +38,8 @@ export function SiteFooter() {
             Jaiye<span className="text-neon-deep">Pass</span>
           </p>
           <p className="mt-2 max-w-xs text-sm text-ink-soft">
-            Your pass to a good time. Event discovery and ticketing for Lagos,
-            built to work across Nigeria and Africa.
+            Your pass to a good time. Find experiences, meet your people and
+            book memorable events across Nigeria.
           </p>
         </div>
         {columns.map((col) => (
@@ -60,7 +60,7 @@ export function SiteFooter() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-ink-faint sm:flex-row sm:justify-between sm:px-6">
           <p>© {new Date().getFullYear()} JaiyePass. Lagos, Nigeria.</p>
-          <p>Demo environment — sample events are labelled as demo data.</p>
+          <p>Made for real experiences across Nigeria.</p>
         </div>
       </div>
     </footer>

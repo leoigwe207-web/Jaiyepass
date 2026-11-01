@@ -1,0 +1,314 @@
+@import "tailwindcss";
+
+/* ── JaiyePass design tokens ────────────────────────────────────────────────
+   Editorial system: warm ivory paper, deep ink type, one vivid Lagos-night
+   accent (electric pink used sparingly), brass secondary for micro-details. */
+@theme {
+  --color-paper: #f7f3ea; /* warm ivory surface */
+  --color-paper-deep: #efe8db; /* alternating section surface */
+  --color-paper-dim: #e6dccb; /* wells, input fills */
+  --color-ink: #16120e; /* deep ink text */
+  --color-ink-soft: #4a443c; /* secondary text */
+  --color-ink-faint: #7a7266; /* meta text, ≥4.5:1 on paper */
+  --color-line: #d8cfbe; /* hairline rules */
+  --color-night: #1b0f2e; /* deep violet-night panels */
+  --color-night-soft: #2a1a45;
+  --color-neon: #ff2e63; /* Lagos nightlife accent — CTAs, live states */
+  --color-neon-deep: #d9003f; /* hover / text-on-ivory variant */
+  --color-brass: #a0741a; /* micro accents, sold counts (AA on ivory) */
+  --color-success: #146b3a;
+  --color-warning: #8a5a00;
+  --color-danger: #a11321;
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+
+  --radius-card: 4px; /* editorial: sharp, not pill-heavy */
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-neon);
+  color: #fff;
+}
+
+/* Visible keyboard focus everywhere, styled to the system. */
+:focus-visible {
+  outline: 3px solid var(--color-neon);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Reduced motion: kill transitions/animations, keep state changes instant. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility display-xl {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+@utility display-lg {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+@utility display-md {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+@utility meta-text {
+  font-size: 0.875rem;
+  color: var(--color-ink-soft);
+}
+
+/* The one animated flourish: a slow pulse for live/limited states. */
+@keyframes jp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.animate-live {
+  animation: jp-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes jp-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-paper-dim) 25%,
+    var(--color-paper-deep) 50%,
+    var(--color-paper-dim) 75%
+  );
+  background-size: 800px 100%;
+  animation: jp-shimmer 1.4s linear infinite;
+}
+
+/* V2: improve tap ergonomics and respect safe areas on small devices. */
+@media (max-width: 640px) {
+  button, select, input[type="submit"] { min-height: 44px; }
+  .display-xl { overflow-wrap: normal; }
+}
+
+
+/* ── JaiyePass account experience · responsive editorial treatment ───────── */
+.auth-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  width: min(1200px, calc(100% - 32px));
+  min-height: min(710px, calc(100svh - 170px));
+  margin: clamp(20px, 3vw, 44px) auto;
+  border: 1px solid var(--color-line);
+  background: #fffdfa;
+  box-shadow: 0 22px 70px rgb(31 22 12 / 0.065);
+}
+.auth-story {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: clamp(28px, 4vw, 54px);
+  position: relative;
+  isolation: isolate;
+}
+.auth-story::before {
+  content: "";
+  position: absolute;
+  width: clamp(280px, 50vw, 600px);
+  height: clamp(280px, 50vw, 600px);
+  border: 1px solid rgb(255 255 255 / .13);
+  border-radius: 50%;
+  right: -37%;
+  top: 16%;
+  z-index: -1;
+  box-shadow: 0 0 0 65px rgb(255 255 255 / .023),0 0 0 132px rgb(255 255 255 / .015);
+}
+.auth-story::after {
+  content: "✳";
+  position: absolute;
+  right: -48px;
+  bottom: 13%;
+  color: var(--color-neon);
+  opacity: .83;
+  font-size: clamp(170px, 23vw, 350px);
+  font-weight: 300;
+  line-height: 1;
+  z-index: -1;
+}
+.auth-story-top, .auth-story-bottom { display:flex; align-items:center; justify-content:space-between; gap:14px; font-size:10px; font-weight:700; letter-spacing:.16em; }
+.auth-story-top { justify-content:flex-start; }
+.auth-story-symbol {color:var(--color-neon);font-size:36px;line-height:1}
+.auth-story-bottom { padding-top:28px; border-top:1px solid rgb(255 255 255 / .2); }
+.auth-story-eyebrow { letter-spacing:.17em; color:#dcbdae; font-size:11px; font-weight:700; }
+.auth-story-title { font-family:var(--font-display); font-size:clamp(50px, 6vw, 92px);font-weight:800;line-height:.98;letter-spacing:-.047em; margin-top:22px; }
+.auth-story-title em { color:#ff7699;font-weight:600; }
+.auth-story-copy { max-width:32ch; color:#e8e1d9; font-size:clamp(14px, 1.5vw, 17px);line-height:1.8;margin-top:28px; }
+.auth-content { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:clamp(28px,5vw,72px); }
+.auth-form-panel { width:100%; max-width:430px; }
+.auth-kicker { display:flex;gap:9px;align-items:center;letter-spacing:.13em;font-size:10px;font-weight:800;color:var(--color-ink-soft); }
+.auth-kicker-dot {width:7px;height:7px;flex:none;border-radius:50%;background:var(--color-neon)}
+.auth-title { font-family:var(--font-display);font-size:clamp(37px, 4vw, 57px);font-weight:800;letter-spacing:-.043em;line-height:1.06;margin-top:16px; }
+.auth-description { font-size:15px;color:var(--color-ink-soft);line-height:1.8;margin-top:17px;max-width:40ch; }
+.auth-form { display:flex; flex-direction:column;gap:21px;margin-top:30px; }
+.auth-field {display:flex;flex-direction:column;gap:8px;}
+.auth-label { font-size:13px;font-weight:750;letter-spacing:.012em; }
+.auth-input { height:52px;width:100%;padding:0 15px;border:1px solid #cfc7ba;border-radius:3px;background:#fff;outline:none;font-size:15px;color:var(--color-ink);transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease; }
+.auth-input::placeholder { color:#89837a; }
+.auth-input:hover { border-color:#968b7e; }
+.auth-input:focus-visible { border-color:var(--color-ink);box-shadow:0 0 0 3px rgb(255 46 99 / .12);outline:none; }
+.auth-password-wrap {position:relative;}
+.auth-password-input {padding-right:101px;}
+.auth-password-toggle {position:absolute;right:5px;top:5px;bottom:5px;min-width:87px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 9px;color:var(--color-ink-soft);font-size:12px;font-weight:750;border-radius:3px;transition:background-color .2s ease,color .2s ease;}
+.auth-password-toggle:hover {background:var(--color-paper);color:var(--color-ink)}
+.auth-password-toggle svg {width:17px;height:17px;}
+.auth-notice {padding:13px 15px;border-radius:3px;font-size:13px;line-height:1.6;}
+.auth-notice-error {background:#fff1f1;border:1px solid #e9bcbc;color:#8d1522;}
+.auth-notice-success {background:#ebf7ef;border:1px solid #abd6bb;color:#155331;}
+.auth-form .jp-submit-button {min-height:52px;margin-top:2px;font-size:14px;letter-spacing:.01em;background:var(--color-ink);color:#fff;border-radius:3px;}
+.auth-form .jp-submit-button:hover:not(:disabled) {background:#34253b;}
+.auth-under-form { margin-top:26px;padding-top:22px;border-top:1px solid var(--color-line);text-align:center;color:var(--color-ink-soft);font-size:13px; }
+.auth-text-link { color:#aa0038;font-weight:700;text-decoration:none;text-underline-offset:3px; }
+.auth-text-link:hover {text-decoration:underline;color:#6e0024;}
+.auth-inline-button {display:inline-flex;min-height:45px;align-items:center;justify-content:center;background:var(--color-ink);color:#fff;padding:12px 19px;text-decoration:none;font-weight:700;font-size:13px;}
+.auth-mobile-brand {display:none;}
+.jp-primary-action, .jp-submit-button { transition:transform .17s ease,background-color .17s ease,box-shadow .17s ease; }
+.jp-primary-action:hover, .jp-submit-button:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 14px rgb(0 0 0 / .14); }
+.jp-primary-action:active, .jp-submit-button:active:not(:disabled) { transform:translateY(0);box-shadow:none; }
+.jp-nav-link { position:relative;text-decoration:none; }
+.jp-nav-link::after { content:"";position:absolute;left:0;right:100%;bottom:-5px;height:2px;background:var(--color-neon);transition:right .2s ease; }
+.jp-nav-link:hover::after {right:0;}
+@media(max-width:900px) {
+ .auth-stage { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+ .auth-story {padding:30px;}
+ .auth-content {padding:36px;}
+ .auth-story-title {font-size:clamp(43px, 6vw, 65px);}
+}
+@media(max-width:700px) {
+ .auth-stage {grid-template-columns:1fr; width:100%;margin:0;border:0;box-shadow:none;min-height:0;}
+ .auth-story {display:none;}
+ .auth-content {min-height:70svh;padding:35px 22px 45px;}
+ .auth-mobile-brand {display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;max-width:430px;margin-bottom:48px;font-size:19px;}
+ .auth-mobile-brand>span {font-size:9px;letter-spacing:.1em;color:var(--color-ink-soft);}
+ .auth-title {font-size:clamp(36px,9vw,47px);}
+}
+@media(prefers-reduced-motion:reduce){ .jp-primary-action,.jp-submit-button,.jp-nav-link::after,.auth-input,.auth-password-toggle{transition:none;} }
+
+/* Event cards should respond to hover, keyboard focus and press without distracting animation. */
+.jp-interactive-card {transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;will-change:auto;}
+@media(hover:hover) and (pointer:fine) {
+.jp-interactive-card:hover {transform:translateY(-3px);border-color:#bdb0a2;box-shadow:0 12px 30px rgb(31 22 12 / .12);}
+}
+.jp-interactive-card:active {transform:translateY(0);}
+.jp-interactive-card:focus-visible {outline:3px solid var(--color-neon);outline-offset:4px;}
+@media(prefers-reduced-motion:reduce){.jp-interactive-card{transition:none;transform:none!important;} .jp-interactive-card img{transition:none!important;transform:none!important;}}
+
+/* Discovery shortcuts: bold editorial navigation, no generic collection placeholders. */
+.jp-discovery-tile {
+  border: 1px solid var(--color-line);
+  background: #fffcf7;
+  color: var(--color-ink);
+  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+}
+.jp-discovery-tile-featured { background: var(--color-ink); border-color: var(--color-ink); color: #fff9f0; }
+.jp-discovery-arrow { font-size: 27px; line-height: 1; transition: transform .22s ease; }
+@media (hover:hover) and (pointer:fine) {
+  .jp-discovery-tile:hover { transform: translateY(-4px); box-shadow: 0 15px 36px rgb(26 17 13 / .11); border-color: var(--color-ink); }
+  .jp-discovery-tile-featured:hover { background: var(--color-night); }
+  .jp-discovery-tile:hover .jp-discovery-arrow { transform: translate(3px,-3px); }
+}
+.jp-discovery-tile:active { transform: translateY(0); }
+.jp-discovery-city { display:inline-flex; gap:9px; align-items:center; padding:10px 13px; border:1px solid var(--color-line); background:#fffaf3; font-size:12px; font-weight:700; color:var(--color-ink); transition: border-color .18s ease, background .18s ease; }
+.jp-discovery-city:hover { border-color:var(--color-ink); background:#fff; }
+.jp-discovery-city-all { background:var(--color-ink); color:white; border-color:var(--color-ink); }
+.jp-discovery-city-all:hover { background:var(--color-night); color:white; }
+@media (prefers-reduced-motion: reduce) { .jp-discovery-tile,.jp-discovery-arrow,.jp-discovery-city{transition:none!important; transform:none!important;} }
+
+
+/* ── Shared editorial form system ────────────────────────────────────────
+   Applies to account, host and all existing forms without changing auth logic.
+   Labels remain OUTSIDE inputs; placeholders are examples, never labels. */
+.jp-editor-panel { background:#fffdfa; border:1px solid var(--color-line); box-shadow:0 16px 44px rgb(30 18 14 / .045); border-radius:4px; }
+.jp-editor-section { background:#fffdfa; border:1px solid var(--color-line); border-radius:4px; padding:clamp(20px,3.5vw,34px); }
+.jp-section-head { display:flex; gap:15px; align-items:flex-start; padding-bottom:24px; margin-bottom:26px; border-bottom:1px solid var(--color-line); }
+.jp-section-number { font-size:11px; font-weight:800; letter-spacing:.1em; color:var(--color-neon-deep); padding-top:7px; min-width:22px; }
+.jp-section-title { font-family:var(--font-display); font-size:clamp(22px,2.7vw,31px); font-weight:800; line-height:1.2; letter-spacing:-.025em; }
+.jp-section-subtitle { margin-top:9px; color:var(--color-ink-soft); font-size:13px; line-height:1.7; }
+.jp-form-field { display:flex; flex-direction:column; gap:9px; min-width:0; }
+.jp-field-label { display:block; font-size:13px; font-weight:750; color:var(--color-ink); letter-spacing:.006em; }
+.jp-optional { margin-left:7px; font-size:11px; font-weight:500; color:var(--color-ink-faint); }
+.jp-field-hint { color:var(--color-ink-soft); font-size:12px; line-height:1.6; }
+.jp-form-control { display:block; width:100%; min-width:0; min-height:53px; padding:13px 15px; background:#fff; border:1px solid #c7bfb2; border-radius:4px; color:var(--color-ink); font-size:15px; line-height:1.45; outline:none; transition:border-color .17s ease,box-shadow .17s ease,background-color .17s ease; }
+.jp-form-control::placeholder { color:#817970; opacity:1; }
+.jp-form-control:hover { border-color:#827669; }
+.jp-form-control:focus-visible { outline:none; border-color:var(--color-ink); box-shadow:0 0 0 3px rgb(255 46 99 / .12); }
+.jp-form-control:disabled { background:var(--color-paper-deep); color:var(--color-ink-faint); cursor:not-allowed; }
+.jp-form-textarea { min-height:125px; resize:vertical; line-height:1.7; }
+.jp-form-select { cursor:pointer; padding-right:35px; }
+.jp-checkbox-row { display:flex; align-items:flex-start; gap:12px; padding:15px; background:var(--color-paper); border:1px solid var(--color-line); border-radius:4px; font-size:13px; line-height:1.6; cursor:pointer; }
+.jp-checkbox-row input { margin-top:2px; }
+.jp-form-submit { display:inline-flex; min-height:50px; align-items:center; justify-content:center; background:var(--color-ink); color:#fff; padding:12px 25px; border:1px solid var(--color-ink); border-radius:3px; font-size:14px; font-weight:750; transition:background-color .2s ease,transform .2s ease,box-shadow .2s ease; cursor:pointer; }
+.jp-form-submit:hover:not(:disabled) { background:var(--color-night); transform:translateY(-1px); box-shadow:0 7px 20px rgb(0 0 0 / .12); }
+.jp-form-submit:active:not(:disabled) {transform:none;box-shadow:none;}
+.jp-form-submit:disabled { opacity:.55; cursor:wait; }
+.jp-editor-footer { display:flex; flex-direction:column; gap:15px; justify-content:space-between; align-items:stretch; padding-top:8px; }
+@media (min-width:640px) { .jp-editor-footer { flex-direction:row; align-items:center; } }
+/* All legacy inputs benefit from consistent placeholder legibility and feedback. */
+:where(input,textarea)::placeholder { color:#80786d; opacity:1; }
+:where(form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),form textarea,form select) { transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease; }
+:where(form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),form textarea,form select):hover:not(:disabled) { border-color:#9d9284; }
+:where(form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),form textarea,form select):focus-visible { outline:none; border-color:var(--color-ink); box-shadow:0 0 0 3px rgb(255 46 99 / .13); }
+@media (prefers-reduced-motion:reduce) { .jp-form-control,.jp-form-submit,:where(form input,form textarea,form select){transition:none!important;transform:none!important;} }

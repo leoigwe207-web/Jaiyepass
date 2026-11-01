@@ -4,7 +4,7 @@ import Link from "next/link";
 
 /**
  * Error boundary for the account, host and admin areas. Distinguishes the
- * expected "database not connected" case (preview/demo environments) from
+ * expected "database not connected" case (unconfigured environments) from
  * unexpected failures, without leaking stack traces.
  */
 export function AreaError({
@@ -25,11 +25,9 @@ export function AreaError({
       <p className="eyebrow">{areaLabel}</p>
       {notConfigured ? (
         <>
-          <h1 className="display-md mt-2">Database not connected</h1>
+          <h1 className="display-md mt-2">This section is temporarily unavailable</h1>
           <p className="mt-3 text-sm text-ink-soft">
-            This section needs a live database. In preview the demo buttons open
-            the sample dashboards only — connect Supabase (and run the
-            migrations) to unlock the rest.
+            We couldn't load this area right now. Please try again later or contact support.
           </p>
         </>
       ) : (

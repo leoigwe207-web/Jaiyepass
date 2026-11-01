@@ -3,9 +3,6 @@ import { requireUser, getManagedOrgId, isEventScannerFor } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime, relativeDeadline } from "@/lib/format";
 import { Scanner } from "@/components/scan/scanner";
-import { getDemoUser } from "@/lib/demo";
-import { demoScannerEvents, demoRecentScans } from "@/lib/demo-fixtures";
-import { DemoBanner } from "@/components/demo/dashboards";
 
 export const metadata: Metadata = { title: "Scan tickets" };
 export const dynamic = "force-dynamic";
@@ -19,8 +16,6 @@ export default async function ScanPage({
 }: {
   searchParams: Promise<{ event?: string }>;
 }) {
-  // Preview demo session → sample scanner, no database access.
-  if (await getDemoUser()) return <DemoScanPage />;
 
   const user = await requireUser();
   const admin = createAdminClient();
@@ -157,77 +152,6 @@ export default async function ScanPage({
             })}
           </ul>
         )}
-      </section>
-    </div>
-  );
-}
-
-/** Preview demo scanner: sample events, simulated verdicts from /api/scan. */
-function DemoScanPage() {
-  const events = demoScannerEvents();
-  const recent = demoRecentScans();
-  const admitted = recent.filter((r) => r.result === "valid").length;
-
-  return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <section>
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-neon-deep">Door staff</p>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">Scan tickets</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          {formatDateTime(events[0].starts_at)} · demo event (sample)
-        </p>
-      </section>
-
-      <DemoBanner scope="Door scanner" />
-
-      <Scanner
-        events={events.map((e) => ({ id: e.id, title: e.title }))}
-        initialEventId={events[0].id}
-        canUseCamera={true}
-      />
-
-      <section className="rounded-card border border-dashed border-neon-deep/50 bg-neon/5 p-4">
-        <h2 className="text-sm font-bold text-neon-deep">Try a simulated scan</h2>
-        <p className="mt-1 text-sm text-ink-soft">
-          Use manual entry with these demo payloads — results are simulated and
-          nothing is recorded:
-        </p>
-        <ul className="mt-2 space-y-1 text-xs text-ink-soft">
-          <li><code>demo.ticket.preview-valid</code> → valid, entry granted</li>
-          <li><code>demo.ticket.preview-used</code> → already used</li>
-          <li><code>demo.ticket.preview-wrong-event</code> → wrong event</li>
-          <li><code>anything-else</code> → invalid ticket</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-ink-faint">
-          Recent scans · {admitted} admitted shown (demo)
-        </h2>
-        <ul className="mt-2 divide-y divide-line rounded-card border border-line bg-white">
-          {recent.map((r) => {
-            const ok = r.result === "valid";
-            return (
-              <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    {r.ticket?.profiles?.full_name ?? "Ticket"} · {r.ticket?.ticket_types?.name ?? "—"}
-                  </p>
-                  <p className="text-xs text-ink-faint">{formatDateTime(r.scanned_at)}</p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-card border px-2 py-0.5 text-xs font-bold ${
-                    ok
-                      ? "border-success/40 bg-success/10 text-success"
-                      : "border-warning/40 bg-warning/10 text-warning"
-                  }`}
-                >
-                  {r.result.replace("_", " ")}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
       </section>
     </div>
   );

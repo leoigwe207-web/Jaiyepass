@@ -4,12 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseConfigured } from "@/lib/queries";
 import { formatDateRange } from "@/lib/format";
 import { formatKobo } from "@/lib/money";
-import { ButtonLink, DemoBadge, EmptyState, EventImage } from "@/components/ui";
+import { ButtonLink, EventImage } from "@/components/ui";
 import { SaveEventButton } from "@/components/save-event-button";
 import { SharePlanButton } from "@/components/share-plan-button";
 import { TicketPicker } from "@/components/ticket-picker";
+import { EventViewed } from "@/components/analytics/analytics";
 import type { TicketTypeOption } from "@/components/ticket-picker-types";
 import { ReportEventForm } from "@/components/report-event-form";
+import { EventVenueMap } from "@/components/event-venue-map";
 import { sanitizeText } from "@/lib/validation-server";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +34,7 @@ async function getEvent(slug: string) {
     )
     .eq("slug", slug)
     .eq("status", "published")
+    .eq("is_demo", false)
     .maybeSingle();
   return data as EventDetailRow | null;
 }
@@ -44,13 +47,13 @@ interface EventDetailRow {
   description: string;
   image_url: string | null;
   starts_at: string;
-  ends_at: string;
+  ends_at: string | null;
   doors_open_at: string | null;
   age_guidance: string | null;
   refund_policy: string;
   is_demo: boolean;
   is_free: boolean;
-  city_name: string | null;
+  city_name: { name: string } | null;
   category_name: string | null;
   venue: { name: string; address: string; map_url: string | null } | null;
   organization: { id: string; name: string; slug: string; description: string | null; verification: string } | null;
@@ -84,20 +87,7 @@ export default async function EventDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
   const event = await getEvent(slug);
 
-  if (!event) {
-    if (!supabaseConfigured()) {
-      return (
-        <div className="mx-auto max-w-3xl px-4 py-16">
-          <EmptyState
-            title="Database not connected"
-            description="Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then run the migrations to load events."
-            action={<ButtonLink href="/events" variant="secondary">Browse events</ButtonLink>}
-          />
-        </div>
-      );
-    }
-    notFound();
-  }
+  if (!event) notFound();
 
   const now = Date.now();
   const openTickets: TicketTypeOption[] = (event.ticket_types ?? [])
@@ -125,6 +115,15 @@ export default async function EventDetailPage({ params }: { params: Params }) {
 
   return (
     <article className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:py-12">
+      {!soldOut && openTickets.length > 0 && (
+        <EventViewed
+          eventId={event.id}
+          isFree={event.is_free}
+          ticketTiers={openTickets.length}
+          soldOut={soldOut}
+        />
+      )}
+
       {/* ── Media band ─────────────────────────────────────────────────── */}
       <div className="relative aspect-[16/9] max-h-[440px] overflow-hidden rounded-card border border-line bg-night md:aspect-[21/9]">
         <EventImage
@@ -133,7 +132,7 @@ export default async function EventDetailPage({ params }: { params: Params }) {
           title={event.title}
           priority
         />
-        <div className="absolute left-4 top-4 flex gap-2">{event.is_demo && <DemoBadge />}</div>
+
       </div>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px]">
@@ -205,6 +204,10 @@ export default async function EventDetailPage({ params }: { params: Params }) {
               {sanitizeText(event.description) || "The host hasn't added a description yet."}
             </div>
           </section>
+
+          {event.venue?.name && event.venue?.address && (
+            <EventVenueMap name={event.venue.name} address={event.venue.address} city={event.city_name?.name} />
+          )}
 
           <section className="mt-8" aria-labelledby="refund-policy">
             <h2 id="refund-policy" className="display-md">
