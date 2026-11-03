@@ -155,7 +155,7 @@ export function TicketPicker({
               : `Checkout · ${formatKobo(total, { hideZeroDecimals: true })} + fees`}
       </button>
       <p className="mt-2 text-center text-xs text-ink-faint">
-        Prices confirmed on the next screen — tickets are held for 10 minutes.
+        Review the total including fees at checkout. Reservations expire 10 minutes after selection.
       </p>
     </div>
   );

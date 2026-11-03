@@ -71,7 +71,7 @@ describe("Paystack webhook", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.status).toBe("paid");
-    expect(verifyAndFinalizeOrder).toHaveBeenCalledWith("order-1");
+    expect(verifyAndFinalizeOrder).toHaveBeenCalledWith("order-1", "jp_abc");
 
     // Idempotency row recorded with provider columns.
     expect(fromMock).toHaveBeenCalledWith("webhook_events");
