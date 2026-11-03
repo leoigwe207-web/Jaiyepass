@@ -27,7 +27,7 @@ export async function getFeaturedEvents(limit = 4): Promise<EventCardDatum[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select(EVENT_CARD_SELECT)
+    .select(`${EVENT_CARD_SELECT}, category_name:categories(slug)`)
     .eq("status", "published")
     .eq("is_demo", false)
     .order("featured", { ascending: false })

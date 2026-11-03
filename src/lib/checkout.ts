@@ -181,7 +181,13 @@ export async function createPendingOrder(opts: {
   }
 
   // Link all holds to the order so expiry can mark the order expired.
-  await admin.from("inventory_holds").update({ order_id: order.id }).in("id", holdIds);
+  const { error: linkError } = await admin.from("inventory_holds").update({ order_id: order.id }).in("id", holdIds);
+  if (linkError) {
+    await admin.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+    await releaseHolds();
+    console.error("inventory hold link failed", linkError.code);
+    return { ok: false, status: 500, error: "Could not reserve your tickets. Please try again." };
+  }
 
   const itemRows = items.map((i) => {
     const tt = byId.get(i.ticketTypeId)!;
@@ -239,6 +245,17 @@ export async function initializeOrderPayment(opts: {
   if (order.status === "paid") return { ok: false, error: "This order is already paid." };
   if (order.status !== "pending" && order.status !== "awaiting_payment") {
     return { ok: false, error: "This order can no longer be paid." };
+  }
+
+  // Every line item must still have an active hold before a payment starts.
+  // Never initiate a new transaction for an expired or unreserved order.
+  const { data: holds, error: holdsError } = await admin
+    .from("inventory_holds")
+    .select("id, status, expires_at")
+    .eq("order_id", orderId);
+  if (holdsError || !holds?.length ||
+      holds.some((h) => h.status !== "active" || new Date(h.expires_at).getTime() <= Date.now())) {
+    return { ok: false, error: "Your ticket reservation expired. Please select tickets again." };
   }
 
   const { paystackSecret, appUrl } = serverEnv();
@@ -330,7 +347,7 @@ export type VerifyOutcome =
  * the success-page route and the webhook — whichever arrives first wins,
  * because finalize_paid_order is idempotent.
  */
-export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOutcome> {
+export async function verifyAndFinalizeOrder(orderId: string, incomingReference?: string): Promise<VerifyOutcome> {
   const admin = createAdminClient();
   const env = serverEnv();
 
@@ -341,11 +358,17 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
     .maybeSingle();
 
   if (!order) return { ok: false, error: "Order not found." };
+  // A signed webhook is not authorization to finalize another reference.
+  if (incomingReference && order.paystack_reference !== incomingReference) {
+    return { ok: false, error: "Webhook reference does not match the order." };
+  }
   if (order.status === "paid") {
     await deliverReceipt(orderId);
     return { ok: true, orderId, status: "already_finalized" };
   }
-  if (order.status === "refunded") return { ok: false, error: "Order was refunded.", orderStatus: order.status };
+  if (order.status !== "pending" && order.status !== "awaiting_payment") {
+    return { ok: false, error: "Order is not payable; reconcile the payment manually.", orderStatus: order.status };
+  }
 
   const reference = order.paystack_reference;
   if (!reference) return { ok: false, error: "No payment reference for this order." };
@@ -375,6 +398,12 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
     return { ok: false, error: `Payment ${verification.status}.`, orderStatus: verification.status };
   }
 
+  // Confirm the provider answered for exactly the reference we requested.
+  if (verification.reference !== reference) {
+    console.error("provider reference mismatch", { orderId });
+    return { ok: false, error: "Payment reference does not match the order." };
+  }
+
   // Strict validation before issuing anything.
   if (verification.amountKobo !== order.total_kobo) {
     // Never mark the order paid on an amount mismatch; leave the payment row
@@ -385,6 +414,16 @@ export async function verifyAndFinalizeOrder(orderId: string): Promise<VerifyOut
   if ((verification.currency ?? "").toUpperCase() !== order.currency.toUpperCase()) {
     console.error("currency mismatch", { reference, expected: order.currency, got: verification.currency });
     return { ok: false, error: "Payment currency does not match the order." };
+  }
+
+  // Confirm that every reserved tier is still held; the staged database
+  // migration additionally enforces this atomically against concurrent sales.
+  const { data: holds, error: holdError } = await admin
+    .from("inventory_holds").select("id, status, expires_at").eq("order_id", orderId);
+  if (holdError || !holds?.length ||
+      holds.some((h) => h.status !== "active" || new Date(h.expires_at).getTime() <= Date.now())) {
+    console.error("payment requires reconciliation: ticket hold expired", { orderId });
+    return { ok: false, error: "Payment received after ticket reservation expired; contact support for reconciliation." };
   }
 
   const { data: result, error: fnErr } = await admin.rpc("finalize_paid_order", {

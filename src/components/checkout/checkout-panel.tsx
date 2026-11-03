@@ -23,7 +23,7 @@ export function CheckoutPanel({
 }) {
   const router = useRouter();
   const [code, setCode] = useState(appliedCode ?? "");
-  const [busy, setBusy] = useState<"promo" | "pay" | "test" | null>(null);
+  const [busy, setBusy] = useState<"promo" | "pay" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
@@ -66,28 +66,6 @@ export function CheckoutPanel({
         return;
       }
       window.location.href = json.authorizationUrl;
-    } catch {
-      setError("Network error — try again.");
-      setBusy(null);
-    }
-  }
-
-  async function testComplete() {
-    setError(null);
-    setBusy("test");
-    try {
-      const res = await fetch("/api/dev/complete-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(json.error ?? "Could not complete the test order.");
-        setBusy(null);
-        return;
-      }
-      router.push(`/checkout/${orderId}/success`);
     } catch {
       setError("Network error — try again.");
       setBusy(null);
@@ -143,21 +121,13 @@ export function CheckoutPanel({
         </p>
       )}
 
-      {testMode ? (
-        <div className="rounded-card border border-warning/40 bg-warning/5 p-4">
-          <p className="text-sm font-bold text-warning">Test mode — no real payment</p>
+      {testMode && !isFree ? (
+        <div role="status" className="rounded-card border border-warning/40 bg-warning/5 p-4">
+          <p className="text-sm font-bold text-warning">Paid checkout is not configured</p>
           <p className="mt-1 text-sm text-ink-soft">
-            Paystack keys are not configured, so this order cannot be paid for real. You can simulate a successful
-            payment to walk the full ticket-issuing flow.
+            A Paystack test key is required to verify a test transaction and issue tickets.
+            No payment or QR ticket has been created. Ask the site administrator to enable test checkout.
           </p>
-          <button
-            type="button"
-            onClick={testComplete}
-            disabled={busy !== null}
-            className="mt-3 rounded-card bg-ink px-5 py-3 text-sm font-bold text-paper hover:bg-night disabled:opacity-60"
-          >
-            {busy === "test" ? "Completing…" : `Simulate payment · ${formatKobo(totalKobo, { hideZeroDecimals: true })}`}
-          </button>
         </div>
       ) : (
         <button

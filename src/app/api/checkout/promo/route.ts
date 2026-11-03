@@ -39,14 +39,15 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, user_id, subtotal_kobo, fee_kobo, total_kobo, discount_kobo, promo_code_id, event_id, organization_id")
+    .select("id, status, user_id, subtotal_kobo, fee_kobo, total_kobo, discount_kobo, promo_code_id, event_id")
     .eq("id", parsed.data.orderId)
     .maybeSingle();
 
   if (!order || order.user_id !== user.id) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
-  if (order.status !== "pending" && order.status !== "awaiting_payment") {
+  // Once Paystack has initialized, the amount is frozen to avoid mismatches.
+  if (order.status !== "pending") {
     return NextResponse.json({ error: "This order can no longer be changed." }, { status: 409 });
   }
 
@@ -82,9 +83,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...totals });
   }
 
-  const organizationId =
-    (order as unknown as { organization_id: string | null }).organization_id ??
-    (await lookupOrgId(admin, order.event_id));
+  const organizationId = await lookupOrgId(admin, order.event_id);
 
   if (!organizationId) {
     return NextResponse.json({ error: "That code is not valid for this event." }, { status: 400 });

@@ -25,19 +25,19 @@ export default async function HomePage() {
     <>
       {/* ── Hero: event-led, spacious, readable on a small laptop ─────────── */}
       <section className="relative overflow-hidden border-b border-line bg-paper">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full border-[70px] border-neon/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute right-5 top-2 hidden select-none text-[12rem] leading-none text-ink/[.035] lg:block">✳</div>
         <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-14">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-end">
             <div>
-              <p className="eyebrow">Culture, concerts & experiences · Across Nigeria</p>
-              <h1 className="display-xl mt-3">
-                Your pass to
+              <p className="eyebrow"><span aria-hidden="true" className="mr-2 text-neon-deep">✳</span> LIVE EXPERIENCES, ALL ACROSS NIGERIA</p>
+              <h1 className="display-xl mt-4 max-w-[12ch]">
+                Be there
                 <br />
-                a good time.
+                <span className="italic text-neon-deep">for the</span> moment.
               </h1>
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-soft">
-                Discover the parties, concerts and experiences worth showing up for.
-                Find your next event, get your ticket, and bring the crew.
+              <p className="mt-6 max-w-[41ch] text-base leading-relaxed text-ink-soft sm:text-lg">
+                Big sounds. Small rooms. Brilliant people. Find real events across Nigeria,
+                book your place and make the night yours.
               </p>
               <div className="mt-7">
                 <HomeSearch cities={cities} />
@@ -52,15 +52,26 @@ export default async function HomePage() {
               {hero ? (
                 <EventFeature event={hero} />
               ) : (
-                <EmptyState
-                  title="No published events yet"
-                  description={
-                    supabaseConfigured()
-                      ? "Events will appear here as soon as hosts publish them."
-                      : "Event listings will appear here when our first hosts publish them."
-                  }
-                  action={<ButtonLink href="/host-onboarding">Host the first event</ButtonLink>}
-                />
+                <div className="jp-home-empty relative flex min-h-[320px] flex-col justify-between overflow-hidden border border-white/10 bg-night p-7 text-paper sm:min-h-[400px] sm:p-9">
+                  <div className="relative z-10 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-[.2em] text-white/70">The lineup starts here</span>
+                    <span aria-hidden="true" className="text-4xl text-neon">✳</span>
+                  </div>
+                  <div className="relative z-10">
+                    <p className="font-[family-name:var(--font-fraunces)] text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.05] tracking-[-.04em]">
+                      Good things<br />are coming.
+                    </p>
+                    <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/75">
+                      {supabaseConfigured()
+                        ? "New experiences will appear here as hosts publish their events."
+                        : "Discover a growing calendar of Nigerian experiences."}
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <Link href="/events" className="inline-flex min-h-11 items-center bg-neon px-5 py-3 text-sm font-bold text-white hover:bg-neon-deep">Explore events</Link>
+                      <Link href="/host-onboarding" className="inline-flex min-h-11 items-center border border-white/50 px-5 py-3 text-sm font-bold text-white hover:bg-white hover:text-ink">List an event</Link>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -100,14 +111,21 @@ export default async function HomePage() {
                 All events
               </Link>
             </div>
-            <ul className="mt-5 flex flex-wrap gap-2">
-              {categories.map((c) => (
+            <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+              {categories.map((c, index) => (
                 <li key={c.slug}>
                   <Link
                     href={`/events?category=${c.slug}`}
-                    className="inline-block rounded-card border border-line bg-paper px-4 py-2 text-sm font-medium hover:border-ink hover:bg-ink hover:text-paper"
+                    data-category={c.slug}
+                    className="jp-category-card group flex min-h-[132px] flex-col justify-between border border-line bg-paper p-4 focus-visible:outline-offset-2 sm:min-h-[156px] sm:p-5"
                   >
-                    {c.name}
+                    <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[.16em] text-ink-faint">
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <span aria-hidden="true" className="text-lg text-neon-deep transition-transform group-hover:translate-x-1">↗</span>
+                    </span>
+                    <span className="max-w-[12ch] font-[family-name:var(--font-fraunces)] text-[clamp(1.1rem,2vw,1.5rem)] font-bold leading-[1.12]">
+                      {c.name}
+                    </span>
                   </Link>
                 </li>
               ))}

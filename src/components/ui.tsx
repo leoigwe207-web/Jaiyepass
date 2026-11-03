@@ -1,41 +1,32 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { EventArtwork } from "./event-artwork";
 
-/** Image block for events: real artwork when present, safe typographic fallback. */
+/** Event covers are real hosted artwork or an accessible editorial fallback. */
 export function EventImage({
   src,
   alt,
   title,
+  category,
   className = "",
   priority = false,
 }: {
   src?: string | null;
   alt: string;
   title?: string;
+  category?: string | null;
   className?: string;
   priority?: boolean;
 }) {
-  if (src) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return (
-      <img
-        src={src}
-        alt={alt}
-        loading={priority ? "eager" : "lazy"}
-        className={`h-full w-full object-cover ${className}`}
-      />
-    );
-  }
   return (
-    <div
-      className={`flex h-full w-full items-end bg-night p-4 ${className}`}
-      role="img"
-      aria-label={alt}
-    >
-      <span className="font-[family-name:var(--font-fraunces)] text-xl font-bold leading-tight text-paper">
-        {title ?? alt}
-      </span>
-    </div>
+    <EventArtwork
+      src={src}
+      alt={alt}
+      title={title ?? alt}
+      category={category}
+      className={className}
+      priority={priority}
+    />
   );
 }
 

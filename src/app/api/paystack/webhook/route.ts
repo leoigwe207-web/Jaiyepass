@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       }
       // verifyAndFinalizeOrder re-verifies with Paystack, checks amount and
       // currency against the order, then finalizes idempotently.
-      const outcome = await verifyAndFinalizeOrder(orderId);
+      const outcome = await verifyAndFinalizeOrder(orderId, reference);
       if (outcome.ok) {
         await markProcessed();
         return NextResponse.json({ received: true, status: outcome.status });

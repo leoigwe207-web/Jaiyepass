@@ -290,6 +290,35 @@ describe("verifyAndFinalizeOrder", () => {
     expect(rpcMock).not.toHaveBeenCalled(); // never issues tickets
   });
 
+  it("rejects a webhook for a different Paystack reference", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test";
+    fromMock.mockReturnValue(orderRow());
+    const r = await verifyAndFinalizeOrder(orderId, "jp_different");
+    expect(r.ok).toBe(false);
+    expect(verifyTransaction).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unexpected reference returned by the provider", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test";
+    fromMock.mockReturnValue(orderRow());
+    vi.mocked(verifyTransaction).mockResolvedValueOnce({
+      ok: true, status: "success", amountKobo: 10_250, currency: "NGN", reference: "jp_other",
+    });
+    const r = await verifyAndFinalizeOrder(orderId);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toContain("reference");
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("never finalizes cancelled or expired orders", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test";
+    fromMock.mockReturnValue(orderRow({status:"expired"}));
+    const r = await verifyAndFinalizeOrder(orderId);
+    expect(r.ok).toBe(false);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("refuses to finalize on currency mismatch", async () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test";
     fromMock.mockReturnValue(orderRow());
@@ -309,6 +338,9 @@ describe("verifyAndFinalizeOrder", () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test";
     fromMock.mockImplementation((table: string) => {
       if (table === "orders") return orderRow();
+      if (table === "inventory_holds") return chain({
+        data: [{ id: "hold-1", status: "active", expires_at: new Date(Date.now() + 600_000).toISOString() }],
+      });
       return chain();
     });
     rpcMock.mockResolvedValue({ data: { status: "paid", tickets_issued: 2 }, error: null });

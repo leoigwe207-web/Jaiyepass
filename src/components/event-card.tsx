@@ -15,6 +15,7 @@ export interface EventCardDatum {
   price_min_kobo?: number | null;
   city_name?: string | null;
   venue_name?: string | null;
+  category_name?: string | null;
   availability?: "available" | "few" | "sold_out" | "closed";
 }
 
@@ -44,6 +45,7 @@ export function EventCard({ event }: { event: EventCardDatum }) {
           src={event.image_url}
           alt={event.title}
           title={event.title}
+          category={event.category_name}
           className="transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute left-3 top-3 flex gap-2">
@@ -87,6 +89,7 @@ export function EventFeature({ event, size = "lg" }: { event: EventCardDatum; si
         src={event.image_url}
         alt={event.title}
         title={event.title}
+        category={event.category_name}
         priority={size === "lg"}
         className="opacity-90 transition-transform duration-700 group-hover:scale-[1.03]"
       />
