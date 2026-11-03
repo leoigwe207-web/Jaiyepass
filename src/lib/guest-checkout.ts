@@ -21,9 +21,13 @@ export async function getOrderAccess(orderId: string): Promise<OrderAccess | nul
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) return null;
   const [session, cookieStore] = await Promise.all([getSessionUser(), cookies()]);
   const admin = createAdminClient();
-  const { data: order, error } = await admin.from("orders")
-    .select(guestCheckoutEnabled() ? "id,user_id,guest_email,guest_token_hash" : "id,user_id")
-    .eq("id", orderId).maybeSingle();
+  const result = guestCheckoutEnabled()
+    ? await admin.from("orders").select("id,user_id,guest_email,guest_token_hash").eq("id", orderId).maybeSingle()
+    : await admin.from("orders").select("id,user_id").eq("id", orderId).maybeSingle();
+  const { error } = result;
+  const order = result.data as {
+    user_id: string | null; guest_email?: string | null; guest_token_hash?: string | null;
+  } | null;
   if (error || !order) return null;
   if (order.user_id) {
     if (session?.id !== order.user_id) return null;

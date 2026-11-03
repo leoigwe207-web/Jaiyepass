@@ -249,11 +249,17 @@ export async function initializeOrderPayment(opts: {
   const admin = createAdminClient();
   const { orderId, userId, userEmail } = opts;
 
-  const { data: order } = await admin
-    .from("orders")
-    .select(`id, user_id, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)${guestCheckoutEnabled() ? ", guest_email, guest_token_hash" : ""}`)
-    .eq("id", orderId)
-    .maybeSingle();
+  const orderResult = guestCheckoutEnabled()
+    ? await admin.from("orders")
+      .select("id, user_id, guest_email, guest_token_hash, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)")
+      .eq("id", orderId).maybeSingle()
+    : await admin.from("orders")
+      .select("id, user_id, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)")
+      .eq("id", orderId).maybeSingle();
+  const order = orderResult.data as {
+    id: string; user_id: string | null; guest_email?: string | null; guest_token_hash?: string | null;
+    status: string; total_kobo: number; currency: string; event_id: string; paystack_reference: string | null;
+  } | null;
 
   if (order && (userId !== null
     ? order.user_id !== userId
@@ -482,16 +488,24 @@ export async function deliverReceipt(orderId: string): Promise<void> {
     console.error("[ticket-email] no ticket pepper configured");
     return;
   }
-  const { data: order, error: readError } = await admin
-    .from("orders")
-    .select(`id, status, total_kobo, paystack_reference, user_id,
-       ${guestCheckoutEnabled() ? "guest_name, guest_email," : ""}
-       profile:profiles(email, full_name),
-       event:events(title, starts_at, venue:venues(name), city:cities(name)),
-       tickets(id, status)`)
-    .eq("id", orderId)
-    .maybeSingle();
-
+  const receiptRead = guestCheckoutEnabled()
+    ? await admin.from("orders")
+      .select(`id, status, total_kobo, paystack_reference, user_id, guest_name, guest_email,
+        profile:profiles(email, full_name),
+        event:events(title, starts_at, venue:venues(name), city:cities(name)),
+        tickets(id, status)`)
+      .eq("id", orderId).maybeSingle()
+    : await admin.from("orders")
+      .select(`id, status, total_kobo, paystack_reference, user_id,
+        profile:profiles(email, full_name),
+        event:events(title, starts_at, venue:venues(name), city:cities(name)),
+        tickets(id, status)`)
+      .eq("id", orderId).maybeSingle();
+  const readError = receiptRead.error;
+  const order = receiptRead.data as {
+    id: string; status: string; total_kobo: number; paystack_reference: string | null;
+    user_id: string | null; guest_name?: string | null; guest_email?: string | null;
+  } | null;
   if (readError || !order || order.status !== "paid") return;
   const profile = (order as unknown as { profile: { email: string; full_name: string | null } | null }).profile;
   const event = (order as unknown as { event: { title: string; starts_at: string } | null }).event;
