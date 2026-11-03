@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { formatKobo } from "@/lib/money";
 import { trackCheckoutStarted } from "@/lib/analytics/events";
@@ -15,15 +16,22 @@ export function TicketPicker({
   eventId,
   eventTitle,
   tickets,
+  signedIn,
+  guestCheckoutEnabled,
 }: {
   eventId: string;
   eventTitle: string;
   tickets: TicketTypeOption[];
+  signedIn: boolean;
+  guestCheckoutEnabled: boolean;
 }) {
   const router = useRouter();
   const [qty, setQty] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const guestMode = !signedIn && guestCheckoutEnabled;
 
   const total = tickets.reduce((sum, t) => sum + (qty[t.id] ?? 0) * t.priceKobo, 0);
   const count = Object.values(qty).reduce((a, b) => a + b, 0);
@@ -46,10 +54,15 @@ export function TicketPicker({
         return;
       }
 
+      if (guestMode && (guestName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim()))) {
+        setError("Enter your name and a valid email address for your QR tickets.");
+        setSubmitting(false);
+        return;
+      }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, items }),
+        body: JSON.stringify({ eventId, items, ...(guestMode ? { guest: { fullName: guestName.trim(), email: guestEmail.trim() } } : {}) }),
       });
       const json = await res.json().catch(() => ({}));
 
@@ -134,13 +147,28 @@ export function TicketPicker({
         })}
       </ul>
 
+      {guestMode && <div className="mt-5 rounded-card border border-line bg-paper p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neon-deep">No account required</p>
+          <h3 className="mt-1 font-[family-name:var(--font-fraunces)] text-xl font-bold">Where should we send your tickets?</h3>
+          <p className="mt-1 text-xs leading-relaxed text-ink-soft">Enter your details once. Your unique QR ticket(s) will be emailed after payment is verified.</p>
+        </div>
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold" htmlFor="buyer-full-name">Full name
+            <input id="buyer-full-name" autoComplete="name" value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength={120} placeholder="Name on the booking" required className="mt-1 w-full rounded-card border border-line bg-white p-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon" />
+          </label>
+          <label className="block text-xs font-semibold" htmlFor="buyer-email">Email for your QR ticket
+            <input id="buyer-email" type="email" autoComplete="email" value={guestEmail} onChange={(event) => setGuestEmail(event.target.value)} maxLength={254} placeholder="name@example.com" required className="mt-1 w-full rounded-card border border-line bg-white p-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon" />
+          </label>
+        </div>
+      </div>}
       {error && (
         <p role="alert" className="mt-3 rounded-card border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
           {error}
         </p>
       )}
 
-      <button
+      {!signedIn && !guestCheckoutEnabled ? <Link href="/login" className="mt-4 block rounded-card bg-ink px-5 py-3.5 text-center text-sm font-bold text-white hover:bg-night">Sign in to buy tickets</Link> : <button
         type="button"
         onClick={startCheckout}
         disabled={submitting || count === 0}
@@ -153,9 +181,9 @@ export function TicketPicker({
             : total === 0
               ? `Reserve ${count} free ticket${count === 1 ? "" : "s"}`
               : `Checkout · ${formatKobo(total, { hideZeroDecimals: true })} + fees`}
-      </button>
+      </button>}
       <p className="mt-2 text-center text-xs text-ink-faint">
-        Review the total including fees at checkout. Reservations expire 10 minutes after selection.
+        The secure checkout shows your final total, including fees. Your selected tickets are held temporarily while you complete payment.
       </p>
     </div>
   );

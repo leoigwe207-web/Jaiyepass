@@ -8,6 +8,8 @@ import { ButtonLink, EventImage } from "@/components/ui";
 import { SaveEventButton } from "@/components/save-event-button";
 import { SharePlanButton } from "@/components/share-plan-button";
 import { TicketPicker } from "@/components/ticket-picker";
+import { getSessionUser } from "@/lib/auth";
+import { guestCheckoutEnabled as guestEnabled } from "@/lib/env";
 import { EventViewed } from "@/components/analytics/analytics";
 import type { TicketTypeOption } from "@/components/ticket-picker-types";
 import { ReportEventForm } from "@/components/report-event-form";
@@ -89,6 +91,8 @@ export default async function EventDetailPage({ params }: { params: Params }) {
 
   if (!event) notFound();
 
+  const currentUser = await getSessionUser();
+  const guestCheckoutEnabled = guestEnabled();
   const now = Date.now();
   const openTickets: TicketTypeOption[] = (event.ticket_types ?? [])
     .filter((t) => {
@@ -253,6 +257,8 @@ export default async function EventDetailPage({ params }: { params: Params }) {
                   eventId={event.id}
                   eventTitle={event.title}
                   tickets={openTickets}
+                  signedIn={Boolean(currentUser)}
+                  guestCheckoutEnabled={guestCheckoutEnabled}
                 />
               </div>
             )}
