@@ -65,6 +65,9 @@ export async function createPendingOrder(opts: {
 }): Promise<CheckoutSuccess | CheckoutFailure> {
   const admin = createAdminClient();
   const { userId, eventId, items } = opts;
+  if (userId === null && !guestCheckoutEnabled()) {
+    return { ok: false, status: 403, error: "Guest checkout is not enabled." };
+  }
   if (userId === null && (
     !opts.guestName || !opts.guestEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(opts.guestEmail)
     || !/^[0-9a-f]{64}$/.test(opts.guestTokenHash ?? "")
@@ -248,6 +251,9 @@ export async function initializeOrderPayment(opts: {
 }): Promise<InitPaymentResult> {
   const admin = createAdminClient();
   const { orderId, userId, userEmail } = opts;
+  if (userId === null && !guestCheckoutEnabled()) {
+    return { ok: false, error: "Guest checkout is not enabled." };
+  }
 
   const orderResult = guestCheckoutEnabled()
     ? await admin.from("orders")
