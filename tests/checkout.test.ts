@@ -21,10 +21,12 @@ vi.mock("@/lib/email", () => ({
 
 import {
   createPendingOrder,
+  deliverReceipt,
   computePromoDiscount,
   verifyAndFinalizeOrder,
 } from "@/lib/checkout";
 import { verifyTransaction } from "@/lib/paystack";
+import { receiptEmail, sendEmail } from "@/lib/email";
 import { guestCheckoutEnabled } from "@/lib/env";
 
 /** Awaitable chainable stub: supports select/eq/in/insert/update + maybeSingle. */
@@ -415,5 +417,38 @@ describe("verifyAndFinalizeOrder", () => {
     expect(r.ok).toBe(false);
     expect(rpcMock).not.toHaveBeenCalled();
     expect(fromMock).toHaveBeenCalledWith("orders");
+  });
+});
+
+describe("guest QR ticket email delivery", () => {
+  it("uses the guest booking email without manufacturing a registered profile", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "resend-test");
+    vi.stubEnv("TICKET_TOKEN_PEPPER", "test-ticket-pepper");
+    const orderId = "55555555-5555-4555-8555-555555555555";
+    const ticketId = "66666666-6666-4666-8666-666666666666";
+    fromMock.mockImplementation((table: string) => {
+      if (table === "orders") return chain({
+        data: {
+          id: orderId, status: "paid", user_id: null,
+          total_kobo: 10000, paystack_reference: "jp_guest_test",
+          guest_name: "Ada Okafor", guest_email: "ada@example.com",
+          profile: null,
+          event: { title: "Live Music Night", starts_at: "2026-12-10T19:00:00Z" },
+          tickets: [{ id: ticketId, status: "issued" }],
+        },
+      });
+      return chain();
+    });
+    rpcMock.mockResolvedValue({ data: true, error: null });
+    await deliverReceipt(orderId);
+    expect(receiptEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "ada@example.com", name: "Ada Okafor", quantity: 1,
+      qrAttachments: [expect.objectContaining({
+        filename: "JaiyePass-ticket-1.png", content_type: "image/png",
+      })],
+    }));
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    vi.unstubAllEnvs();
   });
 });
