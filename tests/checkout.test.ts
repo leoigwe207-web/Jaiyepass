@@ -138,6 +138,45 @@ describe("createPendingOrder", () => {
     }
   });
 
+  it("refuses guest creation unless server feature flag is enabled", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "false");
+    const res = await createPendingOrder({
+      userId: null, guestName: "Ada Okafor", guestEmail: "ada@example.com",
+      guestTokenHash: "a".repeat(64), eventId, items: [{ ticketTypeId: ttId, quantity: 1 }],
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(403);
+    expect(fromMock).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it("creates a guest order with name/email/hash, never a fake auth ID", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "resend-test");
+    vi.stubEnv("TICKET_TOKEN_PEPPER", "pepper-test");
+    setupHappyPath();
+    const original = fromMock.getMockImplementation();
+    let insertBody: Record<string, unknown> | null = null;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "orders") {
+        const c = chain({ data: { id: "55555555-5555-4555-8555-555555555555", created_at: "now" } });
+        c.insert = ((row: Record<string, unknown>) => { insertBody = row; return c; }) as typeof c.insert;
+        return c;
+      }
+      return original ? original(table) : chain();
+    });
+    const res = await createPendingOrder({
+      userId: null, guestName: "Ada Okafor", guestEmail: "ada@example.com",
+      guestTokenHash: "a".repeat(64), eventId, items: [{ ticketTypeId: ttId, quantity: 1 }],
+    });
+    expect(res.ok).toBe(true);
+    expect(insertBody).toMatchObject({
+      user_id: null, guest_name: "Ada Okafor",
+      guest_email: "ada@example.com", guest_token_hash: "a".repeat(64),
+    });
+    vi.unstubAllEnvs();
+  });
+
   it("creates order + items with server-computed totals on success", async () => {
     setupHappyPath();
     const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 2 }] });
