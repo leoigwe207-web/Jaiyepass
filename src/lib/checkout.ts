@@ -404,16 +404,6 @@ export async function verifyAndFinalizeOrder(orderId: string, incomingReference?
     return { ok: false, error: "Payment reference does not match the order." };
   }
 
-  // Confirm that every reserved tier is still held; the staged database
-  // migration additionally enforces this atomically against concurrent sales.
-  const { data: holds, error: holdError } = await admin
-    .from("inventory_holds").select("id, status, expires_at").eq("order_id", orderId);
-  if (holdError || !holds?.length ||
-      holds.some((h) => h.status !== "active" || new Date(h.expires_at).getTime() <= Date.now())) {
-    console.error("payment requires reconciliation: ticket hold expired", { orderId });
-    return { ok: false, error: "Payment received after ticket reservation expired; contact support for reconciliation." };
-  }
-
   // Strict validation before issuing anything.
   if (verification.amountKobo !== order.total_kobo) {
     // Never mark the order paid on an amount mismatch; leave the payment row
@@ -424,6 +414,16 @@ export async function verifyAndFinalizeOrder(orderId: string, incomingReference?
   if ((verification.currency ?? "").toUpperCase() !== order.currency.toUpperCase()) {
     console.error("currency mismatch", { reference, expected: order.currency, got: verification.currency });
     return { ok: false, error: "Payment currency does not match the order." };
+  }
+
+  // Confirm that every reserved tier is still held; the staged database
+  // migration additionally enforces this atomically against concurrent sales.
+  const { data: holds, error: holdError } = await admin
+    .from("inventory_holds").select("id, status, expires_at").eq("order_id", orderId);
+  if (holdError || !holds?.length ||
+      holds.some((h) => h.status !== "active" || new Date(h.expires_at).getTime() <= Date.now())) {
+    console.error("payment requires reconciliation: ticket hold expired", { orderId });
+    return { ok: false, error: "Payment received after ticket reservation expired; contact support for reconciliation." };
   }
 
   const { data: result, error: fnErr } = await admin.rpc("finalize_paid_order", {
