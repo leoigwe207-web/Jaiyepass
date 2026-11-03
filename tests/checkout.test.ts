@@ -25,6 +25,7 @@ import {
   verifyAndFinalizeOrder,
 } from "@/lib/checkout";
 import { verifyTransaction } from "@/lib/paystack";
+import { guestCheckoutEnabled } from "@/lib/env";
 
 /** Awaitable chainable stub: supports select/eq/in/insert/update + maybeSingle. */
 function chain<T extends Record<string, unknown>>(result: Partial<T> = {}) {
@@ -154,6 +155,7 @@ describe("createPendingOrder", () => {
     vi.stubEnv("GUEST_CHECKOUT_ENABLED", "true");
     vi.stubEnv("RESEND_API_KEY", "resend-test");
     vi.stubEnv("TICKET_TOKEN_PEPPER", "pepper-test");
+    expect(guestCheckoutEnabled()).toBe(true);
     setupHappyPath();
     const original = fromMock.getMockImplementation();
     let insertBody: Record<string, unknown> | null = null;
@@ -169,6 +171,7 @@ describe("createPendingOrder", () => {
       userId: null, guestName: "Ada Okafor", guestEmail: "ada@example.com",
       guestTokenHash: "a".repeat(64), eventId, items: [{ ticketTypeId: ttId, quantity: 1 }],
     });
+    if (!res.ok) throw new Error(`Guest creation failed: ${res.error} (HTTP ${res.status})`);
     expect(res.ok).toBe(true);
     expect(insertBody).toMatchObject({
       user_id: null, guest_name: "Ada Okafor",
