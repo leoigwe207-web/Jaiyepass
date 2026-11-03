@@ -23,7 +23,7 @@ BEGIN
       user_id IS NOT NULL OR (
         char_length(guest_name) BETWEEN 2 AND 120
         AND char_length(guest_email) BETWEEN 5 AND 254
-        AND guest_email ~* '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'
+        AND guest_email ~* '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
         AND guest_token_hash ~ '^[a-f0-9]{64}$'
       )
     );

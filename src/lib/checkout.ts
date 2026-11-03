@@ -69,7 +69,7 @@ export async function createPendingOrder(opts: {
     return { ok: false, status: 403, error: "Guest checkout is not enabled." };
   }
   if (userId === null && (
-    !opts.guestName || !opts.guestEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(opts.guestEmail)
+    !opts.guestName || !opts.guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(opts.guestEmail)
     || !/^[0-9a-f]{64}$/.test(opts.guestTokenHash ?? "")
   )) return { ok: false, status: 400, error: "Name and email are required for guest tickets." };
 
