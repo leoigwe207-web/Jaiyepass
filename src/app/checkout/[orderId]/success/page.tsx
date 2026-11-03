@@ -6,6 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyAndFinalizeOrder } from "@/lib/checkout";
 import { formatKobo } from "@/lib/money";
 import { OrderCompleted } from "@/components/analytics/analytics";
+import { deriveQrPayload } from "@/lib/ticket-token";
+import { serverEnv } from "@/lib/env";
+import { QRTicket } from "@/components/qr-ticket";
 
 export const metadata: Metadata = { title: "Payment status" };
 export const dynamic = "force-dynamic";
@@ -50,6 +53,16 @@ export default async function CheckoutSuccessPage({ params }: Params) {
   const paid = order?.status === "paid";
   const status = order?.status ?? null;
 
+  const { data: guestTicketRows } = paid && !access.userId
+    ? await admin.from("tickets")
+        .select("id, status, ticket_type:ticket_types(name)")
+        .eq("order_id", orderId)
+    : { data: [] };
+  const guestTickets = (guestTicketRows ?? []) as unknown as {
+    id: string; status: string; ticket_type: { name: string } | null;
+  }[];
+  const qrPepper = serverEnv().ticketPepper;
+
   if (paid) {
     return (
       <div className="mx-auto max-w-lg rounded-card border border-success/30 bg-success/5 p-8 text-center">
@@ -69,6 +82,21 @@ export default async function CheckoutSuccessPage({ params }: Params) {
             : "Your tickets have been issued, but QR email delivery is pending. Contact support if your email doesn't arrive."}
           {" "}Never share your QR codes.
         </p>
+        {!access.userId && guestTickets.length > 0 && (
+          <div className="mt-6 border-t border-line pt-6">
+            <h2 className="text-sm font-bold">Your QR passes</h2>
+            <p className="mt-1 text-xs text-ink-soft">Show these at the gate. This browser can access them while your booking cookie lasts.</p>
+            <div className="mt-4 grid justify-items-center gap-4 sm:grid-cols-2">
+              {guestTickets.map((ticket) => (
+                <div key={ticket.id} className="flex w-full flex-col items-center gap-2 rounded-card border border-line bg-paper p-4">
+                  <p className="text-sm font-semibold">{ticket.ticket_type?.name ?? "Event ticket"}</p>
+                  <QRTicket payload={qrPepper ? deriveQrPayload(ticket.id, qrPepper) : ""} disabled={ticket.status !== "issued" || !qrPepper} />
+                  <p className="text-xs text-ink-soft">{ticket.status === "issued" ? "Valid for one entry" : "Ticket no longer available"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
             href={access.userId ? "/account/tickets" : "/events"}
