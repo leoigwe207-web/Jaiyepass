@@ -334,3 +334,14 @@ body {
     repeating-radial-gradient(circle at 83% 25%, transparent 0 45px, rgb(255 255 255 / .12) 46px 47px, transparent 48px 94px);
   transform: rotate(-15deg) scale(1.4);
 }
+
+/* Editorial homepage; lightweight motion with reduced-motion fallback. */
+.jp-home-empty::before {content:"";position:absolute;width:min(50vw,350px);aspect-ratio:1;border:1px solid rgb(255 255 255/.14);border-radius:50%;right:-15%;top:12%;box-shadow:0 0 0 48px rgb(255 255 255/.045),0 0 0 96px rgb(255 255 255/.025);}
+.jp-category-card {transition:transform .18s ease,background-color .18s ease,border-color .18s ease;}
+.jp-category-card:hover {transform:translateY(-3px);border-color:var(--color-ink);background:#fffdfa;}
+.jp-category-card[data-category="music"]{border-top:4px solid #cc2255;}
+.jp-category-card[data-category="parties"]{border-top:4px solid #db7046;}
+.jp-category-card[data-category="comedy"]{border-top:4px solid #8c762d;}
+.jp-category-card[data-category="nightlife"]{border-top:4px solid #226f6e;}
+.jp-category-card[data-category="art-culture"]{border-top:4px solid #7561a8;}
+@media (prefers-reduced-motion: reduce){.jp-category-card,.jp-category-card:hover{transform:none;}}
