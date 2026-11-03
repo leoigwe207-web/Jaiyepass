@@ -1,4 +1,5 @@
 import "server-only";
+import { isValidGuestToken } from "./guest-token";
 import { createAdminClient } from "./supabase/admin";
 import { serverEnv } from "./env";
 import { orderTotals, computeFee, percentOff, formatKobo, type Kobo } from "./money";
@@ -55,12 +56,19 @@ function appendHistory(
  * ticket_types row, expires stale holds, and refuses to oversell.
  */
 export async function createPendingOrder(opts: {
-  userId: string;
+  userId: string | null;
   eventId: string;
   items: CheckoutItemInput[];
+  guestName?: string;
+  guestEmail?: string;
+  guestTokenHash?: string;
 }): Promise<CheckoutSuccess | CheckoutFailure> {
   const admin = createAdminClient();
   const { userId, eventId, items } = opts;
+  if (userId === null && (
+    !opts.guestName || !opts.guestEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(opts.guestEmail)
+    || !/^[0-9a-f]{64}$/.test(opts.guestTokenHash ?? "")
+  )) return { ok: false, status: 400, error: "Name and email are required for guest tickets." };
 
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, status: 400, error: "Choose at least one ticket." };
@@ -162,6 +170,9 @@ export async function createPendingOrder(opts: {
     .from("orders")
     .insert({
       user_id: userId,
+      guest_name: userId === null ? opts.guestName : null,
+      guest_email: userId === null ? opts.guestEmail : null,
+      guest_token_hash: userId === null ? opts.guestTokenHash : null,
       event_id: eventId,
       status: "pending",
       subtotal_kobo: totals.subtotalKobo,
@@ -207,7 +218,8 @@ export async function createPendingOrder(opts: {
     return { ok: false, status: 500, error: "Could not create your order. Try again." };
   }
 
-  const expires = new Date(Date.now() + HOLD_MINUTES * 60_000).toISOString();
+  const { data: originalHold } = await admin.from("inventory_holds").select("expires_at").eq("id", primaryHold).maybeSingle();
+  const expires = originalHold?.expires_at ?? new Date(Date.now() + HOLD_MINUTES * 60_000).toISOString();
 
   // Test mode: don't initialize a real Paystack transaction; the checkout
   // page shows a clearly-labelled test flow that cannot issue real tickets.
@@ -228,18 +240,26 @@ export interface InitPaymentResult {
  */
 export async function initializeOrderPayment(opts: {
   orderId: string;
-  userId: string;
+  userId: string | null;
   userEmail: string;
+  guestToken?: string | null;
 }): Promise<InitPaymentResult> {
   const admin = createAdminClient();
   const { orderId, userId, userEmail } = opts;
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)")
+    .select("id, user_id, guest_email, guest_token_hash, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)")
     .eq("id", orderId)
-    .eq("user_id", userId)
     .maybeSingle();
+
+  if (order && (userId !== null
+    ? order.user_id !== userId
+    : order.user_id !== null || !opts.guestToken || !order.guest_token_hash
+      || !isValidGuestToken(opts.guestToken, order.guest_token_hash)
+      || order.guest_email !== userEmail)) {
+    return { ok: false, error: "Order not found." };
+  }
 
   if (!order) return { ok: false, error: "Order not found." };
   if (order.status === "paid") return { ok: false, error: "This order is already paid." };
@@ -305,10 +325,10 @@ export async function initializeOrderPayment(opts: {
 
   const init = await initializeTransaction({
     reference,
-    email: userEmail,
+    email: userId === null ? (order.guest_email ?? "") : userEmail,
     amountKobo: order.total_kobo,
     callbackUrl: `${appUrl}/checkout/${orderId}/success`,
-    metadata: { orderId, eventId: order.event_id, userId },
+    metadata: { orderId, eventId: order.event_id, ...(userId ? { userId } : {}) },
   });
 
   if (!init.ok || !init.authorizationUrl) {
@@ -462,7 +482,7 @@ export async function deliverReceipt(orderId: string): Promise<void> {
   }
   const { data: order, error: readError } = await admin
     .from("orders")
-    .select(`id, status, total_kobo, paystack_reference, user_id,
+    .select(`id, status, total_kobo, paystack_reference, user_id, guest_name, guest_email,
        profile:profiles(email, full_name),
        event:events(title, starts_at, venue:venues(name), city:cities(name)),
        tickets(id, status)`)
@@ -473,7 +493,10 @@ export async function deliverReceipt(orderId: string): Promise<void> {
   const profile = (order as unknown as { profile: { email: string; full_name: string | null } | null }).profile;
   const event = (order as unknown as { event: { title: string; starts_at: string } | null }).event;
   const tickets = (order as unknown as { tickets: { id: string; status: string }[] }).tickets ?? [];
-  if (!profile?.email || !tickets.length || tickets.some((t) => t.status !== "issued")) return;
+  const guest = order as unknown as { guest_name: string | null; guest_email: string | null; user_id: string | null };
+  const recipientEmail = profile?.email ?? guest.guest_email;
+  const recipientName = profile?.full_name ?? guest.guest_name ?? "there";
+  if (!recipientEmail || !tickets.length || tickets.some((t) => t.status !== "issued")) return;
 
   // Only ONE request can own this send attempt. Uses a 10-minute lease so a
   // crashed server cannot permanently block delivery. Requires migration 08.
@@ -489,7 +512,7 @@ export async function deliverReceipt(orderId: string): Promise<void> {
     const qrAttachments: { filename: string; content: string; content_type: string }[] = [];
     for (const [index, ticket] of tickets.entries()) {
       const payload = deriveQrPayload(ticket.id, env.ticketPepper);
-      ticketLinks.push(`${env.appUrl}/account/tickets`);
+      if (guest.user_id) ticketLinks.push(`${env.appUrl}/account/tickets`);
       const png = await QRCode.toBuffer(payload, {
         type: "png", width: 360, margin: 2, errorCorrectionLevel: "M",
       });
@@ -500,8 +523,8 @@ export async function deliverReceipt(orderId: string): Promise<void> {
       });
     }
     const msg = receiptEmail({
-      to: profile.email,
-      name: profile.full_name || "there",
+      to: recipientEmail,
+      name: recipientName,
       eventTitle: event?.title || "your event",
       startsAt: event ? new Date(event.starts_at).toUTCString() : "",
       quantity: tickets.length,

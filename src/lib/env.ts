@@ -36,3 +36,14 @@ export function serverEnv() {
     testMode: process.env.NODE_ENV !== "production" && !paystackSecret,
   };
 }
+
+/**
+ * Guest checkout is gated while the guest-order migration is staged.
+ * Enable on staging only after applying it and configuring email delivery.
+ * Never use a NEXT_PUBLIC_ flag for this server-side authorization decision.
+ */
+export function guestCheckoutEnabled(): boolean {
+  return process.env.GUEST_CHECKOUT_ENABLED === "true"
+    && Boolean(process.env.TICKET_TOKEN_PEPPER)
+    && Boolean(process.env.RESEND_API_KEY);
+}
