@@ -338,6 +338,9 @@ describe("verifyAndFinalizeOrder", () => {
     process.env.PAYSTACK_SECRET_KEY = "sk_test";
     fromMock.mockImplementation((table: string) => {
       if (table === "orders") return orderRow();
+      if (table === "inventory_holds") return chain({
+        data: [{ id: "hold-1", status: "active", expires_at: new Date(Date.now() + 600_000).toISOString() }],
+      });
       return chain();
     });
     rpcMock.mockResolvedValue({ data: { status: "paid", tickets_issued: 2 }, error: null });

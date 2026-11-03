@@ -318,3 +318,19 @@ body {
 .jp-cover-decoration { position: absolute; width: 48%; aspect-ratio: 1; border: 24px solid #f02e69; border-radius: 50%; inset: -38% -15% auto auto; opacity: .85; transform: rotate(-20deg); }
 .jp-cover-empty::after { content: ""; position:absolute; left:-16%; bottom:-57%; width:60%; aspect-ratio:1; border:20px solid rgba(249,217,120,.65); border-radius:50%; }
 @media (prefers-reduced-motion: no-preference) { .jp-cover-decoration { transition: transform .3s ease; } .jp-cover-empty:hover .jp-cover-decoration { transform: rotate(-12deg); } }
+
+/* Category-specific editorial covers, original CSS only — no fake event art. */
+.jp-editorial-artwork {
+  isolation: isolate;
+  background: #26122e;
+}
+.jp-editorial-artwork[data-category="music"] { background: #301027; }
+.jp-editorial-artwork[data-category="parties"] { background: #39181f; }
+.jp-editorial-artwork[data-category="comedy"] { background: #353016; }
+.jp-editorial-artwork[data-category="nightlife"] { background: #142e30; }
+.jp-editorial-artwork[data-category="art-culture"] { background: #2c234a; }
+.jp-artwork-rings {
+  background:
+    repeating-radial-gradient(circle at 83% 25%, transparent 0 45px, rgb(255 255 255 / .12) 46px 47px, transparent 48px 94px);
+  transform: rotate(-15deg) scale(1.4);
+}
