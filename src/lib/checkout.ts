@@ -1,7 +1,7 @@
 import "server-only";
 import { isValidGuestToken } from "./guest-token";
 import { createAdminClient } from "./supabase/admin";
-import { serverEnv } from "./env";
+import { serverEnv, guestCheckoutEnabled } from "./env";
 import { orderTotals, computeFee, percentOff, formatKobo, type Kobo } from "./money";
 import { initializeTransaction, verifyTransaction } from "./paystack";
 import { receiptEmail } from "./email";
@@ -170,9 +170,11 @@ export async function createPendingOrder(opts: {
     .from("orders")
     .insert({
       user_id: userId,
-      guest_name: userId === null ? opts.guestName : null,
-      guest_email: userId === null ? opts.guestEmail : null,
-      guest_token_hash: userId === null ? opts.guestTokenHash : null,
+      ...(userId === null ? {
+        guest_name: opts.guestName,
+        guest_email: opts.guestEmail,
+        guest_token_hash: opts.guestTokenHash,
+      } : {}),
       event_id: eventId,
       status: "pending",
       subtotal_kobo: totals.subtotalKobo,
@@ -249,7 +251,7 @@ export async function initializeOrderPayment(opts: {
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, user_id, guest_email, guest_token_hash, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)")
+    .select(`id, user_id, status, total_kobo, currency, event_id, paystack_reference, events(title, slug)${guestCheckoutEnabled() ? ", guest_email, guest_token_hash" : ""}`)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -482,7 +484,8 @@ export async function deliverReceipt(orderId: string): Promise<void> {
   }
   const { data: order, error: readError } = await admin
     .from("orders")
-    .select(`id, status, total_kobo, paystack_reference, user_id, guest_name, guest_email,
+    .select(`id, status, total_kobo, paystack_reference, user_id,
+       ${guestCheckoutEnabled() ? "guest_name, guest_email," : ""}
        profile:profiles(email, full_name),
        event:events(title, starts_at, venue:venues(name), city:cities(name)),
        tickets(id, status)`)

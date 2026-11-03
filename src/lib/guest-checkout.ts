@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth";
+import { guestCheckoutEnabled } from "@/lib/env";
 import { isValidGuestToken } from "./guest-token";
 
 export { createGuestToken, hashGuestToken } from "./guest-token";
@@ -21,13 +22,12 @@ export async function getOrderAccess(orderId: string): Promise<OrderAccess | nul
   const [session, cookieStore] = await Promise.all([getSessionUser(), cookies()]);
   const admin = createAdminClient();
   const { data: order, error } = await admin.from("orders")
-    .select("id,user_id,guest_email,guest_token_hash")
+    .select(guestCheckoutEnabled() ? "id,user_id,guest_email,guest_token_hash" : "id,user_id")
     .eq("id", orderId).maybeSingle();
   if (error || !order) return null;
   if (order.user_id) {
-    return session?.id === order.user_id
-      ? { userId: session.id, guestEmail: null, guestToken: null }
-      : null;
+    if (session?.id !== order.user_id) return null;
+    return { userId: session.id, guestEmail: null, guestToken: null };
   }
   if (!order.guest_token_hash || !order.guest_email) return null;
   const token = cookieStore.get(guestCookieName(orderId))?.value ?? "";
