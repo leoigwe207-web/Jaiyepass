@@ -13,7 +13,10 @@ export function serverEnv() {
   const paystackSecret = process.env.PAYSTACK_SECRET_KEY ?? "";
   // Paystack signs webhooks with the integration's own secret key.
   const paystackWebhookSecret = paystackSecret;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // In Vercel Preview, callbacks must return to this deployment, not the live site.
+  const appUrl = process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
   const ticketPepper = process.env.TICKET_TOKEN_PEPPER ?? "";
 
   if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
