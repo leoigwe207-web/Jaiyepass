@@ -2,7 +2,7 @@
 
 ## Staging database test results — 2026-11-04
 
-An isolated, free ($0/month quoted) Supabase project was created in the same organization without copying production customer or payment data. The original nine Jira/JaiyePass schema migrations were applied on staging, followed by `staged/guest_checkout_NOT_APPLIED.sql` and the transactional `staged/20261103_finalize_paid_order_NOT_APPLIED.sql`. **These two staging migrations were not applied to production.**
+An isolated, free ($0/month quoted) Supabase project was created in the same organization without copying production customer or payment data. The original nine JaiyePass schema migrations were applied on staging, followed by `staged/guest_checkout_NOT_APPLIED.sql` and the transactional `staged/20261103_finalize_paid_order_NOT_APPLIED.sql`. **These two staging migrations were not applied to production.**
 
 Database transaction checks passed (test fixtures rolled back afterward):
 
@@ -16,7 +16,7 @@ Database transaction checks passed (test fixtures rolled back afterward):
 
 **Not verified:** actual Paystack test-mode payment or webhook, Resend QR email delivery, full browser guest session flow, realistic concurrent checkout traffic. Those need staging Preview secrets and E2E tests, plus production release approval.
 
-The Supabase security adviser still reports six callable SECURITY DEFINER role-helper functions; investigate before release. Staging pause was requested after the tests; verify project status in Supabase before assuming it is paused.
+The Supabase security adviser still reports six callable SECURITY DEFINER role-helper functions; investigate before release. Staging was paused after testing. Supabase project status was verified as **INACTIVE**; no active staging compute remains.
 
 
 The active application code is in `src/`, not in the earlier `release/guest-map-fix/patch` copies.
