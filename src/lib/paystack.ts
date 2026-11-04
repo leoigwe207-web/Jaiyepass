@@ -1,5 +1,5 @@
 import "server-only";
-import { serverEnv } from "./env";
+import { serverEnv, paystackKeyAllowed } from "./env";
 
 /**
  * Paystack REST adapter. All calls happen server-side; the secret key never
@@ -27,6 +27,9 @@ export interface InitializeResult {
 async function paystackFetch(path: string, init: RequestInit) {
   const { paystackSecret } = serverEnv();
   if (!paystackSecret) throw new Error("PAYSTACK_SECRET_KEY not configured");
+  if (!paystackKeyAllowed(paystackSecret, process.env.VERCEL_ENV)) {
+    throw new Error("Paystack Preview requires a sk_test_ secret. Live transactions are blocked.");
+  }
   return fetch(`${PAYSTACK_BASE}${path}`, {
     ...init,
     headers: {

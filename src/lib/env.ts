@@ -50,3 +50,8 @@ export function guestCheckoutEnabled(): boolean {
     && Boolean(process.env.TICKET_TOKEN_PEPPER)
     && Boolean(process.env.RESEND_API_KEY);
 }
+
+/** Never allow a live or malformed Paystack key to initiate a transaction in Preview. */
+export function paystackKeyAllowed(key: string, environment?: string): boolean {
+  return environment !== "preview" || key.startsWith("sk_test_");
+}
