@@ -15,7 +15,7 @@ export default async function ChooseAccountPage() {
     const { createClient } = await import("@/lib/supabase/server");
     const client = await createClient();
     const { data: { user: authUser } } = await client.auth.getUser();
-    redirect(authUser?.user_metadata?.account_type === "organizer" ? "/host" : "/account/tickets");
+    redirect(authUser?.user_metadata?.account_type === "organizer" ? "/host" : "/account");
   }
   return (
     <div className="auth-form-panel">
