@@ -11,14 +11,6 @@ const columns = [
     ],
   },
   {
-    heading: "Hosting",
-    links: [
-      { href: "/host-onboarding", label: "Sell tickets" },
-      { href: "/help", label: "Host help" },
-      { href: "/contact", label: "Contact support" },
-    ],
-  },
-  {
     heading: "Company",
     links: [
       { href: "/about", label: "About" },
