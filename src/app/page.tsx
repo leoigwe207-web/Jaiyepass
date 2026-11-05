@@ -253,31 +253,6 @@ export default async function HomePage() {
       )}
 
       {/* ── Host CTA ─────────────────────────────────────────────────────── */}
-      <section className="bg-night text-paper">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-16 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neon">
-              For organizers
-            </p>
-            <h2 className="display-md mt-3 text-white">
-              Sell tickets. Run the gate.
-              <br />
-              Know your numbers.
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75">
-              Create an event in minutes, take secure Paystack payments, and
-              check attendees in from your phone. Payouts reviewed and released
-              by the platform, with a full ledger.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-3">
-            <ButtonLink href="/host-onboarding">Start selling tickets</ButtonLink>
-            <ButtonLink href="/help" variant="ghost" className="text-white hover:text-neon">
-              How payouts work
-            </ButtonLink>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
