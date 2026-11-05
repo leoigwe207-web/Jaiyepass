@@ -29,7 +29,7 @@ export function SiteHeader() {
         }
         const { data: profile } = await supabase.from("profiles")
           .select("role").eq("id", session.user.id).maybeSingle();
-        if (active) setAccountHref(profile?.role === "admin" ? "/admin" : session.user.user_metadata?.account_type === "organizer" ? "/host" : "/account/tickets");
+        if (active) setAccountHref(profile?.role === "admin" ? "/admin" : session.user.user_metadata?.account_type === "organizer" ? "/host" : "/account");
       } catch {
         if (active) setAccountHref(null);
       }
