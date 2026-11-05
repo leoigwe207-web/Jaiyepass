@@ -66,6 +66,8 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
   if (!rl.ok) return { error: `Too many attempts. Try again in ${rl.retryAfterSeconds}s.` };
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: "Enter a valid email and password." };
+  const chosenType = formData.get("accountType");
+  if (chosenType !== "organizer" && chosenType !== "individual") return { error: "Choose an account type before signing in." };
   const next = String(formData.get("next") ?? "");
   // Only relative, same-site paths may override the role-based destination.
   const nextRoute = next.startsWith("/") && !next.startsWith("//") &&
@@ -105,7 +107,23 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
       await supabase.auth.signOut();
       return { error: "This account does not have administrator access. Sign in with your admin account." };
     }
-    destination = nextRoute ?? (role === "admin" ? "/admin" : "/account/tickets");
+    const { data: membership, error: memberError } = await admin.from("organization_members")
+      .select("id").eq("user_id", data.user.id).eq("status", "active")
+      .in("role", ["owner", "admin", "manager"]).limit(1).maybeSingle();
+    if (memberError) return { error: "Unable to load organizer permissions. Please try again." };
+    const isOrganizer = Boolean(membership) || data.user.user_metadata?.account_type === "organizer";
+    if (role !== "admin" && chosenType !== (isOrganizer ? "organizer" : "individual")) {
+      await supabase.auth.signOut();
+      return { error: isOrganizer
+        ? "This is an organizer account. Choose Organizer on the account selection page."
+        : "This is an individual account. Choose Individual on the account selection page." };
+    }
+    // Do not let an untrusted next parameter cross account boundaries.
+    const safeRoleNext = nextRoute && (
+      role === "admin" || (isOrganizer ? nextRoute.startsWith("/host") : nextRoute.startsWith("/account"))
+    ) ? nextRoute : null;
+    destination = role === "admin" ? (safeRoleNext ?? "/admin")
+      : safeRoleNext ?? (isOrganizer ? "/host" : "/account/tickets");
   } catch (error) {
     recordAuthFailure("login", error);
     return { error: "Unable to connect to authentication. Run the local auth diagnostic and try again." };
@@ -116,6 +134,8 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
 export async function signupAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const rl = rateLimit(await clientKey("signup"), RATE_LIMITS.signup);
   if (!rl.ok) return { error: `Too many signup attempts. Try again in ${rl.retryAfterSeconds}s.` };
+  const accountType = formData.get("accountType");
+  if (accountType !== "organizer" && accountType !== "individual") return { error: "Choose an account type before registering." };
   const parsed = signupSchema.safeParse({
     email: formData.get("email"), password: formData.get("password"), fullName: formData.get("fullName"),
   });
@@ -127,7 +147,7 @@ export async function signupAction(_prev: AuthFormState, formData: FormData): Pr
     const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
-      options: { data: { full_name: parsed.data.fullName }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
+      options: { data: { full_name: parsed.data.fullName, account_type: accountType }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
     });
     if (error) {
       recordAuthFailure("signup", error);
