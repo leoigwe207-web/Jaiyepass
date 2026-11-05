@@ -44,7 +44,7 @@ export default async function HomePage() {
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
                 <Link href="/events" className="inline-flex items-center justify-center rounded-card bg-neon-deep px-5 py-3 text-white transition-colors hover:bg-night">Explore events <span aria-hidden="true" className="ml-2">↗</span></Link>
-                <Link href="/host-onboarding" className="inline-flex items-center justify-center rounded-card border border-ink px-5 py-3 text-ink transition-colors hover:bg-ink hover:text-paper">Host an event</Link>
+                
               </div>
             </div>
 
@@ -68,7 +68,7 @@ export default async function HomePage() {
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
                       <Link href="/events" className="inline-flex min-h-11 items-center bg-neon px-5 py-3 text-sm font-bold text-white hover:bg-neon-deep">Explore events</Link>
-                      <Link href="/host-onboarding" className="inline-flex min-h-11 items-center border border-white/50 px-5 py-3 text-sm font-bold text-white hover:bg-white hover:text-ink">List an event</Link>
+                      
                     </div>
                   </div>
                 </div>
@@ -217,7 +217,7 @@ export default async function HomePage() {
               <EmptyState
                 title="Nothing on the calendar yet"
                 description="When hosts publish events, they'll show up here first."
-                action={<ButtonLink href="/host-onboarding" variant="secondary">List your event</ButtonLink>}
+                action={<ButtonLink href="/events" variant="secondary">Browse events</ButtonLink>}
               />
             </div>
           )}
