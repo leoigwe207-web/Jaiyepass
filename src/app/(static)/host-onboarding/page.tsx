@@ -91,7 +91,7 @@ export default function HostOnboardingPage() {
       </section>
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <ButtonLink href="/signup?role=host">Create a host account</ButtonLink>
+        <ButtonLink href="/choose-account">Create a host account</ButtonLink>
         <ButtonLink href="/contact" variant="secondary">
           Talk to us first
         </ButtonLink>
@@ -99,7 +99,7 @@ export default function HostOnboardingPage() {
 
       <p className="mt-6 text-sm text-ink-faint">
         Already selling tickets?{" "}
-        <Link href="/login" className="underline underline-offset-2 hover:text-ink">
+        <Link href="/choose-account" className="underline underline-offset-2 hover:text-ink">
           Sign in
         </Link>
         .
