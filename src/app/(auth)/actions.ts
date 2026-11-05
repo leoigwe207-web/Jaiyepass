@@ -73,7 +73,7 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
   const nextRoute = next.startsWith("/") && !next.startsWith("//") &&
     !next.includes("\\") && !/[\r\n]/.test(next) && next !== "/" &&
     !next.startsWith("/login") && !next.startsWith("/signup") ? next : null;
-  let destination = "/account/tickets";
+  let destination = "/account";
 
   if (!authConfigured()) return { error: "Sign-in configuration is incomplete. Please contact the site administrator." };
   try {
@@ -123,7 +123,7 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
       role === "admin" || (isOrganizer ? nextRoute.startsWith("/host") : nextRoute.startsWith("/account"))
     ) ? nextRoute : null;
     destination = role === "admin" ? (safeRoleNext ?? "/admin")
-      : safeRoleNext ?? (isOrganizer ? "/host" : "/account/tickets");
+      : safeRoleNext ?? (isOrganizer ? "/host" : "/account");
   } catch (error) {
     recordAuthFailure("login", error);
     return { error: "Unable to connect to authentication. Run the local auth diagnostic and try again." };
