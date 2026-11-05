@@ -14,7 +14,7 @@ export function SignupForm({ hostIntent = false }: { hostIntent?: boolean }) {
         <p className="auth-kicker">ONE MORE STEP</p>
         <h1 className="auth-title">Check your inbox.</h1>
         <p className="auth-description">{state.message}</p>
-        <Link href="/login" className="auth-inline-button mt-7">Go to sign in</Link>
+        <Link href={hostIntent ? "/login?role=organizer" : "/login?role=individual"} className="auth-inline-button mt-7">Go to sign in</Link>
       </div>
     );
   }
@@ -25,6 +25,7 @@ export function SignupForm({ hostIntent = false }: { hostIntent?: boolean }) {
       <h1 className="auth-title">Make it a good one.</h1>
       <p className="auth-description">{hostIntent ? "Create one account to host events, sell tickets and manage your audience." : "One account for discovering events, getting tickets and making memories."}</p>
       <form action={formAction} className="auth-form">
+        <input type="hidden" name="accountType" value={hostIntent ? "organizer" : "individual"} />
         <div className="auth-field">
           <label htmlFor="fullName" className="auth-label">Full name</label>
           <input id="fullName" name="fullName" placeholder="Your full name" required autoComplete="name" minLength={2} maxLength={100} className="auth-input" />
@@ -38,6 +39,7 @@ export function SignupForm({ hostIntent = false }: { hostIntent?: boolean }) {
         <SubmitButton label="Create my account" pendingLabel="Creating account…" />
         <p className="text-xs leading-relaxed text-ink-soft">By creating an account, you agree to our <Link href="/terms" className="auth-text-link">Terms</Link> and <Link href="/privacy" className="auth-text-link">Privacy policy</Link>.</p>
       </form>
+      <p className="mt-4 text-center text-sm"><Link href="/choose-account" className="auth-text-link">Choose a different account type</Link></p>
       <p className="auth-under-form">Already have an account? <Link href="/login" className="auth-text-link">Sign in</Link></p>
     </div>
   );
