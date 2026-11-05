@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 
 const navLinks = [
   { href: "/events", label: "Browse" },
-  { href: "/host", label: "Host events" },
 ];
 
 export function SiteHeader() {
@@ -30,7 +29,7 @@ export function SiteHeader() {
         }
         const { data: profile } = await supabase.from("profiles")
           .select("role").eq("id", session.user.id).maybeSingle();
-        if (active) setAccountHref(profile?.role === "admin" ? "/admin" : "/account/tickets");
+        if (active) setAccountHref(profile?.role === "admin" ? "/admin" : session.user.user_metadata?.account_type === "organizer" ? "/host" : "/account/tickets");
       } catch {
         if (active) setAccountHref(null);
       }
@@ -39,8 +38,8 @@ export function SiteHeader() {
     return () => { active = false; };
   }, [pathname]);
 
-  const signInTarget = accountHref ?? "/login";
-  const signInLabel = accountHref === "/admin" ? "Admin dashboard" : accountHref ? "My account" : "Sign in";
+  const signInTarget = accountHref ?? "/choose-account";
+  const signInLabel = accountHref === "/admin" ? "Admin dashboard" : accountHref === "/host" ? "Organizer dashboard" : accountHref ? "My dashboard" : "Sign in";
 
   // Dashboards render their own chrome.
   if (pathname?.startsWith("/host") || pathname?.startsWith("/admin") || pathname?.startsWith("/scan")) {
@@ -67,12 +66,6 @@ export function SiteHeader() {
             </Link>
           ))}
           <Link
-            href="/account/tickets"
-            className="jp-nav-link text-sm font-medium text-ink-soft hover:text-ink"
-          >
-            My tickets
-          </Link>
-          <Link
             href={signInTarget}
             className="jp-primary-action rounded-card bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-night"
           >
@@ -94,7 +87,7 @@ export function SiteHeader() {
       {open && (
         <nav id="mobile-nav" aria-label="Mobile" className="border-t border-line bg-paper px-4 py-4 md:hidden">
           <ul className="flex flex-col gap-3">
-            {[...navLinks, { href: "/account/tickets", label: "My tickets" }, { href: signInTarget, label: signInLabel }].map(
+            {[...navLinks, { href: signInTarget, label: signInLabel }].map(
               (l) => (
                 <li key={l.href}>
                   <Link
