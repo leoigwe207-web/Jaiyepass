@@ -252,7 +252,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Host CTA ─────────────────────────────────────────────────────── */}
     </>
   );
 }
