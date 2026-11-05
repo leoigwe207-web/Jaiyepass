@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 
 const tabs = [
+  { href: "/account", label: "Dashboard" },
   { href: "/account/tickets", label: "My tickets" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/saved", label: "Saved" },
