@@ -38,6 +38,7 @@ async function getEvent(slug: string) {
     .eq("status", "published")
     .eq("is_demo", false)
     .maybeSingle();
+  if (!data || (data.organization as { verification?: string } | null)?.verification !== "verified") return null;
   return data as EventDetailRow | null;
 }
 

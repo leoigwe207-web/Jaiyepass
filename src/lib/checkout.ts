@@ -1,5 +1,6 @@
 import "server-only";
 import { isValidGuestToken } from "./guest-token";
+import { isOrganizationActive } from "./organization-status";
 import { createAdminClient } from "./supabase/admin";
 import { serverEnv, guestCheckoutEnabled } from "./env";
 import { orderTotals, computeFee, percentOff, formatKobo, type Kobo } from "./money";
@@ -110,6 +111,10 @@ export async function createPendingOrder(opts: {
     new Date(event.starts_at).getTime() <= Date.now()
   ) {
     return { ok: false, status: 404, error: "This event is not available." };
+  }
+
+  if (!(await isOrganizationActive(event.organization_id))) {
+    return { ok: false, status: 403, error: "Ticket sales are unavailable while this organizer account is restricted." };
   }
 
   // Load trusted ticket-type rows for every requested type.
@@ -279,6 +284,15 @@ export async function initializeOrderPayment(opts: {
   if (order.status === "paid") return { ok: false, error: "This order is already paid." };
   if (order.status !== "pending" && order.status !== "awaiting_payment") {
     return { ok: false, error: "This order can no longer be paid." };
+  }
+
+  const { data: paymentEvent } = await admin.from("events")
+    .select("id, status, organization_id")
+    .eq("id", order.event_id)
+    .maybeSingle();
+  if (!paymentEvent || paymentEvent.status !== "published" ||
+      !(await isOrganizationActive(paymentEvent.organization_id))) {
+    return { ok: false, error: "Ticket sales for this organizer are currently unavailable." };
   }
 
   // Every line item must still have an active hold before a payment starts.

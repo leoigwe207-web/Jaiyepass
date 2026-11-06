@@ -8,6 +8,7 @@ const { fromMock, rpcMock } = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: fromMock, rpc: rpcMock }),
 }));
+vi.mock("@/lib/organization-status", () => ({ isOrganizationActive: vi.fn(async () => true) }));
 vi.mock("@/lib/paystack", () => ({
   initializeTransaction: vi.fn(async () => ({ ok: true, authorizationUrl: "https://pay.example/checkout" })),
   verifyTransaction: vi.fn(async () => ({ ok: true, status: "success", amountKobo: 0, currency: "NGN" })),
@@ -28,6 +29,7 @@ import {
 import { verifyTransaction } from "@/lib/paystack";
 import { receiptEmail, sendEmail } from "@/lib/email";
 import { guestCheckoutEnabled } from "@/lib/env";
+import { isOrganizationActive } from "@/lib/organization-status";
 
 /** Awaitable chainable stub: supports select/eq/in/insert/update + maybeSingle. */
 function chain<T extends Record<string, unknown>>(result: Partial<T> = {}) {
@@ -180,6 +182,15 @@ describe("createPendingOrder", () => {
       guest_email: "ada@example.com", guest_token_hash: "a".repeat(64),
     });
     vi.unstubAllEnvs();
+  });
+
+  it("blocks a paused organizer even when the event remains published", async () => {
+    setupHappyPath();
+    vi.mocked(isOrganizationActive).mockResolvedValueOnce(false);
+    const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 1 }] });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(403);
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
   it("creates order + items with server-computed totals on success", async () => {

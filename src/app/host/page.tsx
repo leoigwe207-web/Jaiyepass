@@ -68,14 +68,21 @@ export default async function HostOverviewPage() {
               {verification === "verified"
                 ? "Verified organizer"
                 : verification === "rejected"
-                  ? "Verification rejected"
-                  : "Verification pending"}
+                  ? "Organizer rejected"
+                  : verification === "paused"
+                    ? "Organizer paused"
+                    : "Organizer setup incomplete"}
             </span>
           </p>
           {verification === "pending" && (
             <p className="mt-2 max-w-prose text-sm text-ink-faint">
-              You can create and edit events now. Events go live after our team verifies your account — usually within
-              one business day.
+              Organizer onboarding is incomplete. Contact support for assistance.
+            </p>
+          )}
+          {(verification === "paused" || verification === "rejected") && (
+            <p role="status" className="mt-3 max-w-prose rounded-card border border-warning/40 bg-warning/5 p-4 text-sm text-ink-soft">
+              Your organizer account is {verification}. New event creation, editing, paid ticket sales, and payout requests are restricted. Existing ticket orders remain in your account. Contact JaiyePass support if you need to appeal.
+              {org?.verification_note ? " Reason: " + org.verification_note : ""}
             </p>
           )}
           {verification === "rejected" && org?.verification_note && (
@@ -84,12 +91,12 @@ export default async function HostOverviewPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/host/scanner" className="rounded-card border border-line bg-white px-5 py-3 text-sm font-bold text-ink hover:border-neon-deep">Scan tickets</Link>
-        <Link
+        {verification === "verified" && <Link
           href="/host/events/new"
           className="rounded-card bg-neon px-5 py-3 text-sm font-bold text-white hover:bg-neon-deep"
         >
           Create an event
-        </Link>
+        </Link>}
         </div>
       </section>
 

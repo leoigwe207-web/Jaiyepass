@@ -118,7 +118,7 @@ export async function setUserRoleAction(_prev: AdminActionState, formData: FormD
 
 const verificationSchema = z.object({
   orgId: z.string().uuid(),
-  decision: z.enum(["verified", "rejected", "pending"]),
+  decision: z.enum(["verified", "paused", "rejected"]),
   note: z.string().trim().max(400).optional().or(z.literal("")),
 });
 
@@ -132,6 +132,9 @@ export async function setOrgVerificationAction(_prev: AdminActionState, formData
     note: String(formData.get("note") ?? ""),
   });
   if (!parsed.success) return { error: "Invalid verification change." };
+  if (parsed.data.decision !== "verified" && (!parsed.data.note || parsed.data.note.trim().length < 8)) {
+    return { error: "Add a reason (at least 8 characters) before pausing or rejecting this organizer." };
+  }
 
   const { error } = await ctx.admin
     .from("organizations")
@@ -151,10 +154,13 @@ export async function setOrgVerificationAction(_prev: AdminActionState, formData
     action: "org.verification_changed",
     entityType: "organization",
     entityId: parsed.data.orgId,
-    metadata: { verification: parsed.data.decision },
+    metadata: { verification: parsed.data.decision, reason: parsed.data.note ? sanitizeText(parsed.data.note) : null },
   });
 
   revalidatePath("/admin/hosts");
+  revalidatePath("/host");
+  revalidatePath("/events");
+  revalidatePath("/");
   return { ok: true };
 }
 

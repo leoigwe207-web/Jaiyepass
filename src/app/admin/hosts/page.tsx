@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime } from "@/lib/format";
-import { FieldDecisionForm } from "@/components/admin/admin-forms";
+import { OrganizerModerationForm } from "@/components/admin/admin-forms";
 import { setOrgVerificationAction } from "@/app/admin/actions";
 
 export const metadata: Metadata = { title: "Organizers" };
@@ -10,7 +10,8 @@ export const metadata: Metadata = { title: "Organizers" };
 const VERIFY_LABELS: Record<string, { label: string; cls: string }> = {
   unverified: { label: "Unverified", cls: "bg-paper-dim text-ink-soft border-line" },
   pending: { label: "Pending", cls: "bg-warning/10 text-warning border-warning/30" },
-  verified: { label: "Verified", cls: "bg-success/10 text-success border-success/30" },
+  verified: { label: "Active · auto-approved", cls: "bg-success/10 text-success border-success/30" },
+  paused: { label: "Paused", cls: "bg-warning/10 text-warning border-warning/30" },
   rejected: { label: "Rejected", cls: "bg-danger/10 text-danger border-danger/30" },
 };
 
@@ -29,7 +30,7 @@ export default async function AdminHostsPage() {
     <div className="space-y-6">
       <section>
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-extrabold">Organizers</h1>
-        <p className="mt-1 text-sm text-ink-soft">{orgs?.length ?? 0} organizer accounts</p>
+        <p className="mt-1 text-sm text-ink-soft">{orgs?.length ?? 0} organizer accounts · New organizers are approved automatically. Pause or reject accounts when a complaint requires action.</p>
       </section>
 
       {(!orgs || orgs.length === 0) ? (
@@ -58,15 +59,7 @@ export default async function AdminHostsPage() {
                   {o.verification_note && <p className="mt-1 text-xs text-ink-soft">Note: {o.verification_note}</p>}
                 </div>
                 <div className="max-w-md">
-                  <FieldDecisionForm
-                    action={setOrgVerificationAction}
-                    fields={{ orgId: o.id }}
-                    options={[
-                      { name: "decision", value: "verified", label: "Verify", tone: "primary" },
-                      { name: "decision", value: "rejected", label: "Reject", tone: "danger" },
-                      { name: "decision", value: "pending", label: "Reset to pending" },
-                    ]}
-                  />
+                  <OrganizerModerationForm action={setOrgVerificationAction} orgId={o.id} currentStatus={o.verification} />
                 </div>
               </li>
             );
