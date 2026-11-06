@@ -36,8 +36,7 @@ export function SiteHeader() {
       } catch { if (live) setAccountHref(null); }
     }
     void sync();
-    const { data: listener } = client.auth.onAuthStateChange(() => { void sync(); });
-    return () => { live = false; listener.subscription.unsubscribe(); };
+    return () => { live = false; };
   }, [pathname]);
 
   useEffect(() => {
