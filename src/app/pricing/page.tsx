@@ -1,52 +1,61 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FEE_CAP_KOBO, FEE_RATE, formatKobo } from "@/lib/money";
+import { Reveal } from "@/components/motion/primitives";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "JaiyePass pricing for event organizers in Nigeria.",
+  description: "Transparent platform fees for JaiyePass event organizers in Nigeria.",
 };
 
-const featureGroups = [
-  { icon: "◈", title: "Event types", items: ["Free and paid ticket types", "In-person event listings", "Draft and published events", "Recurring and one-off experiences"] },
-  { icon: "▣", title: "Selling tickets", items: ["No fee on free tickets", "Secure Paystack checkout", "Ticket quantities and sales windows", "Ticket inventory management"] },
-  { icon: "✎", title: "Customisations", items: ["Your own event title and description", "Event cover image and details", "Ticket categories and prices", "Event-specific refund policy"] },
-  { icon: "◎", title: "Tracking & management", items: ["Organizer dashboard", "Sales and order information", "QR ticket check-in", "Event and attendee management"] },
-  { icon: "✧", title: "Promotion & growth", items: ["Shareable event pages", "Event discovery across Nigeria", "Public event listings", "Promotion codes for tickets"] },
-  { icon: "◇", title: "Support & security", items: ["Protected organizer access", "Email ticket confirmations", "Payment verification", "Support and refund requests"] },
+const features = [
+  { icon: "✳", title: "Create your way", details: "Build the kind of experience people remember.", items: ["Free and paid ticket categories", "Event images and descriptions", "Drafts before going live", "Ticket sales windows"] },
+  { icon: "↗", title: "Sell with confidence", details: "A checkout designed to make yes easy.", items: ["Paystack-powered checkout", "Secure order verification", "Inventory and capacity limits", "Clear checkout fee breakdown"] },
+  { icon: "◎", title: "Know your audience", details: "Simple tools to make every event smoother.", items: ["Event and order dashboard", "QR ticket check-in", "Sales and attendance overview", "Payout and refund request history"] },
+  { icon: "◇", title: "Own your story", details: "Let your event take center stage.", items: ["Shareable public event pages", "Event cover image", "Venue and schedule details", "Ticket categories and prices"] },
+  { icon: "▣", title: "Plan the details", details: "Keep the busywork out of your best moments.", items: ["Attendee management", "Event promotion codes", "Mobile-friendly event pages", "Scanner access for event teams"] },
+  { icon: "✦", title: "Built for trust", details: "A smoother experience from purchase to entry.", items: ["Email ticket delivery", "Protected account access", "Payment status verification", "Support and reporting tools"] },
 ];
-
+const percent = Number((FEE_RATE * 100).toFixed(2));
 export default function PricingPage() {
   return (
-    <div className="jp-pricing-page">
-      <section className="mx-auto max-w-3xl px-5 pb-10 pt-12 text-center sm:pt-20">
-        <p className="jp-mini-eyebrow">SIMPLE PRICING</p>
-        <h1 className="jp-screen-heading mt-3">Free to sign up.<br/>Simple pricing.</h1>
-        <p className="mx-auto mt-4 max-w-xl text-ink-soft">JaiyePass makes it easy to list free events. A small platform fee applies when customers buy paid tickets.</p>
-        <p className="mt-6 text-sm font-medium text-ink-soft">🇳🇬 Nigeria · NGN</p>
-        <div className="jp-price-panel mx-auto mt-9">
-          <p className="text-4xl font-extrabold tracking-tight sm:text-5xl">{FEE_RATE * 100}%</p>
-          <p className="mt-2 text-sm font-semibold text-neon-deep">per paid order · capped at {formatKobo(FEE_CAP_KOBO, { hideZeroDecimals: true })}</p>
-          <p className="mt-4 text-xs text-ink-soft">Platform fee is added at checkout. Free ticket orders carry no platform fee.</p>
+    <div className="jp-v3-pricing">
+      <section className="jp-v3-pricing-hero">
+        <div className="jp-v3-container jp-v3-pricing-layout">
+          <Reveal>
+            <span className="jp-v3-section-kicker">SIMPLE PRICING / NO SURPRISES</span>
+            <h1>Good events.<br/><em>Great value.</em></h1>
+            <p>Creating an event should be the fun part. Start free and pay a small platform fee when tickets sell.</p>
+            <Link href="/signup?role=organizer" className="jp-v3-dark-cta">Create an account <span aria-hidden="true">↗</span></Link>
+          </Reveal>
+          <Reveal className="jp-v3-fee-card" delay={0.12}>
+            <div className="jp-v3-fee-top"><span>THE JAIYEPASS PLATFORM FEE</span><span>NG / ₦</span></div>
+            <div className="jp-v3-fee-number">{percent}<span>%</span></div>
+            <p>per paid order</p>
+            <div className="jp-v3-fee-rule" />
+            <div className="jp-v3-fee-detail"><span>Maximum platform fee</span><strong>{formatKobo(FEE_CAP_KOBO, { hideZeroDecimals: true })}</strong></div>
+            <div className="jp-v3-fee-detail"><span>Free tickets</span><strong>₦0 fee</strong></div>
+            <span className="jp-v3-fee-footnote">The platform fee is added at checkout. Payment-provider terms and applicable costs are displayed where relevant.</span>
+            <span className="jp-v3-fee-deco" aria-hidden="true">✳</span>
+          </Reveal>
         </div>
       </section>
-      <section className="mx-auto grid max-w-5xl gap-4 px-5 pb-14 sm:grid-cols-2 lg:grid-cols-3" aria-label="Included features">
-        {featureGroups.map(group => (
-          <article className="jp-feature-panel" key={group.title}>
-            <span className="jp-feature-icon" aria-hidden="true">{group.icon}</span>
-            <h2 className="mt-5 text-lg font-bold">{group.title}</h2>
-            <ul className="mt-4 space-y-3">
-              {group.items.map(item => <li key={item} className="flex gap-2 text-sm text-ink-soft"><span className="text-neon-deep" aria-hidden="true">•</span>{item}</li>)}
-            </ul>
-          </article>
-        ))}
+
+      <section className="jp-v3-section jp-v3-container">
+        <Reveal className="jp-v3-section-top">
+          <div><span className="jp-v3-section-kicker">THE TOOLKIT / 001</span><h2 className="jp-v3-section-title">Everything you need.<br/><em>Nothing you don't.</em></h2><p className="jp-v3-section-copy">One place to create, sell, organize, and make the night happen.</p></div>
+        </Reveal>
+        <div className="jp-v3-pricing-grid">
+          {features.map((feature,i) => <Reveal key={feature.title} delay={(i % 3) * 0.06}>
+            <article className="jp-v3-pricing-feature"><span aria-hidden="true" className="jp-v3-pricing-icon">{feature.icon}</span><h3>{feature.title}</h3><p>{feature.details}</p><ul>{feature.items.map(item => <li key={item}><span aria-hidden="true">↗</span>{item}</li>)}</ul></article>
+          </Reveal>)}
+        </div>
       </section>
-      <section className="mx-auto max-w-5xl px-5 pb-16">
-        <div className="jp-pricing-contact">
-          <p className="text-xs font-bold uppercase tracking-widest text-white/80">Here to help</p>
-          <h2 className="mt-3 text-3xl font-bold">Have specific event needs?</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/90">Tell us about your upcoming experience and we can help you work out what you need.</p>
-          <Link href="/contact" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-8 font-bold text-ink hover:bg-paper-deep">Contact us</Link>
+      <section className="jp-v3-pricing-banner">
+        <div className="jp-v3-container jp-v3-pricing-banner-inner">
+          <Reveal><span className="jp-v3-section-kicker">LET'S MAKE IT HAPPEN / 002</span><h2>Big plans?<br/><em>We're listening.</em></h2><p>Have a specific question about your event, ticketing, or platform pricing? Reach out.</p></Reveal>
+          <Link href="/contact" className="jp-v3-white-cta">Talk to us ↗</Link>
+          <span className="jp-v3-pricing-banner-star" aria-hidden="true">✳</span>
         </div>
       </section>
     </div>

@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getManagedOrgId } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getManagedOrgId } from "@/lib/auth";
 import { HostNav } from "@/components/host/host-nav";
 
 export const metadata: Metadata = { title: { template: "%s · Host", default: "Host dashboard" } };
 export const dynamic = "force-dynamic";
-
 export default async function HostLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser("/host");
   const orgId = await getManagedOrgId(user.id);
@@ -17,11 +14,13 @@ export default async function HostLayout({ children }: { children: React.ReactNo
     const { data: { user: signedIn } } = await supabase.auth.getUser();
     if (signedIn?.user_metadata?.account_type !== "organizer") redirect("/account/tickets");
   }
-
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="jp-v3-dashboard-shell">
       <HostNav email={user.email} isHost={!!orgId} isPlatformAdmin={user.role === "admin"} />
-      <div className="mt-6">{children}</div>
+      <div className="jp-v3-dashboard-main">
+        <div className="jp-v3-dashboard-heading"><span>THE ORGANIZER STUDIO / JAIYEPASS</span><a href="/events">Explore events ↗</a></div>
+        {children}
+      </div>
     </div>
   );
 }
