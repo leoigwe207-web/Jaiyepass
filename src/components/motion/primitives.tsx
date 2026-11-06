@@ -11,10 +11,14 @@ export function Reveal({
   children, className = "", delay = 0, once = true,
 }: { children: ReactNode; className?: string; delay?: number; once?: boolean }) {
   const reduced = useReducedMotion();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  // Server output and no-JS fallback remain visible; only enhance after hydration.
+  if (!hydrated || reduced) return <div className={className}>{children}</div>;
   return (
     <motion.div
       className={className}
-      initial={reduced ? false : { opacity: 0, y: 18, filter: "blur(5px)" }}
+      initial={{ opacity: 0, y: 18, filter: "blur(5px)" }}
       whileInView={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once, amount: 0.13, margin: "0px 0px -24px 0px" }}
       transition={{ duration: 0.58, delay, ease: [0.22, 1, 0.36, 1] }}
