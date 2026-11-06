@@ -12,10 +12,10 @@ export interface SaleWindowTier {
 
 export type PublicSaleStatus = "available" | "few" | "upcoming" | "sold_out" | "closed";
 
-export function getPublicSaleStatus(tiers: SaleWindowTier[], nowMs = Date.now()): {
+export function getPublicSaleStatus<T extends SaleWindowTier>(tiers: T[], nowMs = Date.now()): {
   status: PublicSaleStatus;
-  selling: SaleWindowTier[];
-  inStock: SaleWindowTier[];
+  selling: T[];
+  inStock: T[];
   remaining: number;
   nextOpenMs: number | null;
 } {
