@@ -16,6 +16,7 @@ import { getOrgBalance } from "@/lib/host";
 import { serverEnv } from "@/lib/env";
 import { isOrganizationActive } from "@/lib/organization-status";
 import { rateLimit } from "@/lib/rate-limit";
+import { lagosLocalToUtcIso } from "@/lib/ticket-sales-time";
 
 export type ActionState = { error?: string; ok?: boolean; id?: string };
 
@@ -396,6 +397,15 @@ export async function addTicketTypeAction(eventId: string, _prev: ActionState, f
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the ticket details." };
 
+  // HTML datetime-local values represent the organizer's Lagos wall clock time.
+  const startIso = parsed.data.salesStartAt ? lagosLocalToUtcIso(parsed.data.salesStartAt) : null;
+  const endIso = parsed.data.salesEndAt ? lagosLocalToUtcIso(parsed.data.salesEndAt) : null;
+  if (parsed.data.salesStartAt && !startIso) return { error: "Enter a valid sales start in Lagos time (WAT)." };
+  if (parsed.data.salesEndAt && !endIso) return { error: "Enter a valid sales end in Lagos time (WAT)." };
+  if (startIso && endIso && Date.parse(endIso) <= Date.parse(startIso)) {
+    return { error: "Sales end must be later than sales start." };
+  }
+
   const { data, error } = await ctx.admin
     .from("ticket_types")
     .insert({
@@ -405,8 +415,8 @@ export async function addTicketTypeAction(eventId: string, _prev: ActionState, f
       price_kobo: parsed.data.priceKobo,
       quantity: parsed.data.quantity,
       per_order_limit: parsed.data.perOrderLimit,
-      sales_start_at: parsed.data.salesStartAt ? new Date(parsed.data.salesStartAt).toISOString() : null,
-      sales_end_at: parsed.data.salesEndAt ? new Date(parsed.data.salesEndAt).toISOString() : null,
+      sales_start_at: startIso,
+      sales_end_at: endIso,
       status: "active",
     })
     .select("id")

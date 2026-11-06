@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getHostContext } from "@/lib/host";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime } from "@/lib/format";
+import { formatLagosTicketDateTime } from "@/lib/ticket-sales-time";
 import { formatKobo } from "@/lib/money";
 import { TicketTypeForm, PromoForm, ScannerForm } from "@/components/host/host-forms";
 import { EventCoverUploader } from "@/components/host/event-cover-uploader";
@@ -168,8 +169,8 @@ export default async function HostEventPage({ params }: Params) {
                   </p>
                   <p className="mt-0.5 text-xs text-ink-faint">
                     {t.sold_count} / {t.quantity} sold · max {t.per_order_limit} per order
-                    {t.sales_start_at ? ` · from ${formatDateTime(t.sales_start_at)}` : ""}
-                    {t.sales_end_at ? ` · until ${formatDateTime(t.sales_end_at)}` : ""}
+                    {t.sales_start_at ? ` · from ${formatLagosTicketDateTime(t.sales_start_at)}` : ""}
+                    {t.sales_end_at ? ` · until ${formatLagosTicketDateTime(t.sales_end_at)}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
