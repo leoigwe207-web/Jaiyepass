@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatKobo } from "@/lib/money";
 import { formatDateTime, relativeDeadline } from "@/lib/format";
 import { CheckoutPanel } from "@/components/checkout/checkout-panel";
+import { CHECKOUT_ORDER_SELECT } from "@/lib/checkout-order-select";
 
 export const metadata: Metadata = { title: "Checkout" };
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ type Order = {
   fee_kobo: number;
   total_kobo: number;
   created_at: string;
-  promo_code: { code: string } | null;
+  promo_code_id: string | null;
   hold: { expires_at: string; status: string } | null;
   event: {
     id: string;
@@ -41,13 +42,7 @@ export default async function CheckoutPage({ params }: Params) {
   const admin = createAdminClient();
   const { data, error: readError } = await admin
     .from("orders")
-    .select(
-      `id, status, subtotal_kobo, discount_kobo, fee_kobo, total_kobo, created_at,
-       promo_code:promo_codes(code),
-       hold:inventory_holds!orders_hold_id_fkey(expires_at, status),
-       event:events(id, title, slug, starts_at, is_demo, venue:venues(name), city:cities(name)),
-       order_items(name_snapshot, unit_price_kobo, quantity)`,
-    )
+.select(CHECKOUT_ORDER_SELECT)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -57,6 +52,17 @@ export default async function CheckoutPage({ params }: Params) {
     throw new Error("Couldn't load your booking.");
   }
   if (!order) notFound();
+
+  // promo_code_id is not a FK to promo_codes in the staging schema.
+  // Read the optional display label separately; totals remain from the order.
+  // A promo label lookup failure must never turn a valid booking into a 500.
+  const promoResult = order.promo_code_id
+    ? await admin.from("promo_codes").select("code").eq("id", order.promo_code_id).maybeSingle()
+    : null;
+  if (promoResult?.error) {
+    console.error("[checkout] promo label lookup failed", promoResult.error.code);
+  }
+  const promoCode = promoResult?.data?.code ?? null;
 
   if (order.status === "paid") {
     return (
@@ -132,7 +138,7 @@ export default async function CheckoutPage({ params }: Params) {
           {order.discount_kobo > 0 && (
             <div className="flex justify-between text-success">
               <dt>
-                Discount{order.promo_code ? ` (${order.promo_code.code})` : ""}
+                Discount{promoCode ? ` (${promoCode})` : ""}
               </dt>
               <dd>−{formatKobo(order.discount_kobo, { hideZeroDecimals: true })}</dd>
             </div>
@@ -163,7 +169,7 @@ export default async function CheckoutPage({ params }: Params) {
             totalKobo={order.total_kobo}
             isFree={order.total_kobo === 0}
             testMode={!process.env.PAYSTACK_SECRET_KEY}
-            appliedCode={order.promo_code?.code ?? null}
+            appliedCode={promoCode}
           />
         </section>
       ) : (
