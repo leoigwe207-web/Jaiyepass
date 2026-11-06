@@ -39,7 +39,7 @@ async function getEvent(slug: string) {
     .eq("is_demo", false)
     .maybeSingle();
   if (!data || (data.organization as { verification?: string } | null)?.verification !== "verified") return null;
-  return data as EventDetailRow | null;
+  return data as unknown as EventDetailRow;
 }
 
 interface EventDetailRow {
