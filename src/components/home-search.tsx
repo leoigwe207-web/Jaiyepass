@@ -15,20 +15,20 @@ export function HomeSearch({ cities }: { cities: { name: string; slug: string }[
       if (city) params.set("city", city);
       router.push("/events" + (params.size ? "?" + params.toString() : ""));
     }}>
-      <div className="flex-1">
-        <label htmlFor="home-search-q" className="sr-only">Artist, venue or event</label>
-        <input id="home-search-q" type="search" value={q} onChange={event => setQ(event.target.value)} placeholder="Search artists, events, venues…" className="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-ink-faint sm:text-base" />
+      <div className="jp-v3-search-input-wrap">
+        <span aria-hidden="true" className="jp-v3-search-icon">⌕</span>
+        <label htmlFor="home-search-q" className="sr-only">Search by artist, event, or venue</label>
+        <input id="home-search-q" type="search" value={q} onChange={event => setQ(event.target.value)} placeholder="Search for a good time…" className="jp-v3-search-input" />
       </div>
-      {cities.length > 0 && (
-        <div className="hidden sm:block sm:w-44">
-          <label htmlFor="home-search-city" className="sr-only">City</label>
-          <select id="home-search-city" value={city} onChange={event => setCity(event.target.value)} className="w-full border-l border-line bg-transparent px-3 py-3 text-sm text-ink-soft">
-            <option value="">All Nigeria</option>
-            {cities.filter(cityItem => cityItem.slug !== "accra").map(cityItem => <option key={cityItem.slug} value={cityItem.slug}>{cityItem.name}</option>)}
-          </select>
-        </div>
-      )}
-      <button type="submit" aria-label="Search events" className="jp-button-primary min-w-24 !rounded-xl">Search</button>
+      <div className="jp-v3-search-city-wrap">
+        <label htmlFor="home-search-city" className="sr-only">City</label>
+        <span aria-hidden="true">⌖</span>
+        <select id="home-search-city" value={city} onChange={event => setCity(event.target.value)} className="jp-v3-search-select">
+          <option value="">Anywhere in Nigeria</option>
+          {cities.filter(item => item.slug !== "accra").map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+        </select>
+      </div>
+      <button type="submit" className="jp-v3-search-submit">Find events <span aria-hidden="true">↗</span></button>
     </form>
   );
 }
