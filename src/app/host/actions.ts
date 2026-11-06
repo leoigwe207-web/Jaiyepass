@@ -753,6 +753,7 @@ export async function requestPayoutAction(_prev: ActionState, formData: FormData
     .in("role", ["owner", "admin"])
     .maybeSingle();
   if (!membership) return { error: "Only owners/admins can request payouts." };
+  if (!(await isOrganizationActive(membership.organization_id))) return { error: "This organizer account is paused or rejected. Payout requests are disabled." };
 
   const rl = rateLimit(`payout:${user.id}`, { limit: 5, windowMs: 60 * 60_000 });
   if (!rl.ok) return { error: "Too many payout requests — try again later." };
