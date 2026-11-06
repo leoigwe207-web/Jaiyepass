@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 import { FieldDecisionForm } from "@/components/admin/admin-forms";
 import { handleReportAction } from "@/app/admin/actions";
@@ -27,6 +28,7 @@ function reportLink(status: string, page: number) {
 export default async function AdminReportsPage({
   searchParams,
 }: { searchParams: Promise<{ status?: string; page?: string }> }) {
+  await requireAdmin();
   const params = await searchParams;
   const status = statuses.find(s => s === params.status) ?? "all";
   const number = Number(params.page);
