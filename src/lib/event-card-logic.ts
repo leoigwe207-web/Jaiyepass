@@ -1,3 +1,4 @@
+import { getPublicSaleStatus } from "@/lib/public-sale-status";
 import type { EventCardDatum } from "@/components/event-card";
 
 export function decorateEventCards(
@@ -16,22 +17,9 @@ export function decorateEventCards(
       }
       return null;
     };
-    const tickets = ticket_types ?? [];
-    const active = tickets.filter((t) => t.status === "active" || t.status === "sold_out");
-    const selling = active.filter((t) =>
-      (!t.sales_start_at || new Date(t.sales_start_at).getTime() <= nowMs) &&
-      (!t.sales_end_at || new Date(t.sales_end_at).getTime() > nowMs),
-    );
-    const inStock = selling.filter((t) => t.status === "active" && t.quantity > t.sold_count);
-    const prices = inStock.map((t) => t.price_kobo);
-    const remaining = inStock.reduce((sum, t) => sum + Math.max(0, t.quantity - t.sold_count), 0);
-    const hasExhaustedTier = selling.some((t) => t.quantity <= t.sold_count || t.status === "sold_out");
-    const availability: EventCardDatum["availability"] =
-      inStock.length === 0
-        ? (selling.length > 0 && hasExhaustedTier ? "sold_out" : "closed")
-        : remaining <= 10
-          ? "few"
-          : "available";
+    const sale = getPublicSaleStatus(ticket_types ?? [], nowMs);
+    const prices = sale.inStock.map((t) => t.price_kobo);
+    const availability: EventCardDatum["availability"] = sale.status;
     return {
       ...rest,
       city_name: relationName(rest.city_name, "name"),

@@ -15,6 +15,7 @@ import type { TicketTypeOption } from "@/components/ticket-picker-types";
 import { ReportEventForm } from "@/components/report-event-form";
 import { EventVenueMap } from "@/components/event-venue-map";
 import { sanitizeText } from "@/lib/validation-server";
+import { getPublicSaleStatus } from "@/lib/public-sale-status";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +113,13 @@ export default async function EventDetailPage({ params }: { params: Params }) {
       perOrderLimit: t.per_order_limit,
     }));
 
-  const soldOut = openTickets.every((t) => t.remaining === 0);
+  const sale = getPublicSaleStatus(event.ticket_types ?? [], now);
+  const soldOut = sale.status === "sold_out";
+  const salesUpcoming = sale.status === "upcoming";
+  const nextOpening = sale.nextOpenMs === null ? null : new Intl.DateTimeFormat("en-NG", {
+    timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short",
+    hour: "numeric", minute: "2-digit",
+  }).format(new Date(sale.nextOpenMs));
   const minPrice = openTickets.length ? Math.min(...openTickets.map((t) => t.priceKobo)) : null;
   const mapQuery = event.venue
     ? encodeURIComponent(`${event.venue.name}, ${event.venue.address}`)
@@ -246,10 +253,10 @@ export default async function EventDetailPage({ params }: { params: Params }) {
             {soldOut || openTickets.length === 0 ? (
               <div className="mt-4">
                 <p className="rounded-card border border-danger/30 bg-danger/5 px-3 py-2 text-sm font-semibold text-danger">
-                  {soldOut ? "Sold out" : "Sales are closed for this event"}
+                  {soldOut ? "Sold out" : salesUpcoming ? `Ticket sales open ${nextOpening} (Lagos time)` : "Sales are closed for this event"}
                 </p>
                 <p className="mt-3 text-sm text-ink-soft">
-                  Check back later or save the event to get notified when more tickets drop.
+                  {salesUpcoming ? "Tickets are not on sale yet. They will become available automatically when the scheduled sales window opens." : "Check back later or save the event for updates."}
                 </p>
               </div>
             ) : (

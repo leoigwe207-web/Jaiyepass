@@ -16,11 +16,12 @@ export interface EventCardDatum {
   city_name?: string | null;
   venue_name?: string | null;
   category_name?: string | null;
-  availability?: "available" | "few" | "sold_out" | "closed";
+  availability?: "available" | "few" | "upcoming" | "sold_out" | "closed";
 }
 
 function availabilityBadge(a?: EventCardDatum["availability"]) {
   if (a === "sold_out") return <Badge tone="danger">Sold out</Badge>;
+  if (a === "upcoming") return <Badge>Sales opening soon</Badge>;
   if (a === "few") return <Badge tone="warning">Few left</Badge>;
   if (a === "closed") return <Badge>Sales closed</Badge>;
   return null;
