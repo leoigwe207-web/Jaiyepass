@@ -1,0 +1,182 @@
+
+/* Public catalog, editorial pricing, account onboarding and dashboard shell. */
+.jp-v3-pricing-hero {background:#f1ebe2;overflow:hidden;}
+.jp-v3-pricing-layout {display:grid;grid-template-columns:1fr .88fr;align-items:center;gap:clamp(35px,7vw,110px);padding-block:clamp(76px,9vw,134px);}
+.jp-v3-pricing-hero h1 {font-family:var(--font-display);font-size:clamp(58px,6.8vw,103px);font-weight:750;letter-spacing:-.07em;line-height:.96;margin-top:23px;}
+.jp-v3-pricing-hero h1 em {font-weight:550;color:#bc4929;}
+.jp-v3-pricing-hero .jp-v3-section-kicker {font-size:11px;}
+.jp-v3-pricing-hero p {font-size:clamp(15px,1.6vw,18px);line-height:1.8;color:#615b54;max-width:38ch;margin-top:26px;}
+.jp-v3-pricing-hero .jp-v3-dark-cta {margin-top:28px;}
+.jp-v3-fee-card {position:relative;overflow:hidden;background:#201e1c;border:1px solid #292722;color:white;border-radius:30px;padding:clamp(30px,4vw,52px);min-height:420px;box-shadow:0 32px 70px rgba(35,29,23,.16);}
+.jp-v3-fee-top {display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;letter-spacing:.14em;color:#e0b5a7;font-weight:900;}
+.jp-v3-fee-number {font-family:var(--font-display);font-size:clamp(120px,14vw,210px);font-weight:800;letter-spacing:-.12em;line-height:1;margin-top:10px;color:#ffb08b;position:relative;z-index:1;}
+.jp-v3-fee-number span {font-size:.37em;vertical-align:top;display:inline-block;margin-top:.18em;margin-left:.12em;}
+.jp-v3-fee-card>p {font-size:19px;color:#ddd0c3;margin:-3px 0 0;font-weight:650;}
+.jp-v3-fee-rule {height:1px;background:#58504a;margin:30px 0 20px;}
+.jp-v3-fee-detail {display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:15px;font-size:13px;color:#c7beba;position:relative;z-index:1;}
+.jp-v3-fee-detail strong {color:#fff;font-weight:900;}
+.jp-v3-fee-footnote {display:block;margin-top:25px;font-size:11px;line-height:1.6;color:#a9a39b;max-width:50ch;position:relative;z-index:1;}
+.jp-v3-fee-deco {position:absolute;right:-30px;bottom:-110px;color:rgba(243,122,76,.07);font-size:440px;pointer-events:none;line-height:1;}
+.jp-v3-pricing-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+.jp-v3-pricing-feature {min-height:385px;height:100%;padding:clamp(23px,2.8vw,36px);border:1px solid #e4ded6;background:white;border-radius:22px;transition:transform .2s ease,border-color .2s ease;}
+.jp-v3-pricing-feature:hover {transform:translateY(-3px);border-color:#d1ab97;}
+.jp-v3-pricing-icon {display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:13px;background:#fff1e8;color:#bb4627;font-size:27px;}
+.jp-v3-pricing-feature h3 {font-family:var(--font-display);font-size:27px;font-weight:700;margin-top:21px;letter-spacing:-.025em;}
+.jp-v3-pricing-feature>p {margin-top:9px;font-size:13px;color:#665f5a;line-height:1.55;}
+.jp-v3-pricing-feature ul {display:grid;gap:12px;margin-top:25px;}
+.jp-v3-pricing-feature li {display:flex;align-items:start;gap:11px;font-size:12px;color:#3c3733;line-height:1.5;}
+.jp-v3-pricing-feature li span {color:#bd4929;font-weight:900;}
+.jp-v3-pricing-banner {background:#d45732;color:white;overflow:hidden;position:relative;}
+.jp-v3-pricing-banner-inner {min-height:350px;padding-block:75px;display:flex;align-items:center;justify-content:space-between;gap:30px;position:relative;isolation:isolate;}
+.jp-v3-pricing-banner .jp-v3-section-kicker {color:#ffe0c8;}
+.jp-v3-pricing-banner h2 {font-family:var(--font-display);font-size:clamp(49px,5.5vw,82px);font-weight:750;line-height:.98;letter-spacing:-.06em;margin-top:19px;}
+.jp-v3-pricing-banner h2 em {font-weight:550;color:#ffe0ad;}
+.jp-v3-pricing-banner p {margin-top:16px;max-width:42ch;line-height:1.65;color:#ffe3d6;font-size:14px;}
+.jp-v3-pricing-banner .jp-v3-white-cta {z-index:1;white-space:nowrap;}
+.jp-v3-pricing-banner-star {position:absolute;right:13%;top:-55%;font-size:630px;color:rgba(255,255,255,.08);z-index:-1;line-height:1;}
+/* Catalog filters and cards */
+.jp-v3-catalog-hero {background:#191e1e;position:relative;overflow:hidden;color:white;}
+.jp-v3-catalog-hero .jp-v3-container {position:relative;min-height:350px;padding-block:75px 80px;display:flex;align-items:center;isolation:isolate;}
+.jp-v3-catalog-hero .jp-v3-section-kicker {color:#f0a181;}
+.jp-v3-catalog-hero h1 {font-family:var(--font-display);font-weight:750;font-size:clamp(58px,8.5vw,122px);line-height:.95;letter-spacing:-.08em;margin-top:18px;}
+.jp-v3-catalog-hero h1 em {font-weight:550;color:#f08c68;}
+.jp-v3-catalog-hero p {max-width:43ch;margin-top:20px;color:#cbd0cc;font-size:16px;line-height:1.6;}
+.jp-v3-catalog-asterisk {position:absolute;top:-100px;right:-50px;font-size:560px;line-height:1;color:#ffffff0c;z-index:-1;pointer-events:none;}
+.jp-v3-catalog-body {display:grid;grid-template-columns:280px minmax(0,1fr);align-items:start;gap:clamp(25px,3vw,60px);padding-block:65px 105px;}
+.jp-v3-catalog-sidebar {position:sticky;top:108px;}
+.jp-v3-sidebar-heading {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;font-size:10px;letter-spacing:.13em;font-weight:900;color:#9f452b;}
+.jp-v3-sidebar-heading>span:last-child {color:#69615c;}
+.jp-v3-catalog-sidebar form {box-shadow:0 14px 45px rgba(25,25,24,.04);border-radius:20px!important;padding:23px!important;}
+.jp-v3-catalog-sidebar input[type="search"],.jp-v3-catalog-sidebar select {min-height:45px;border-radius:11px;}
+.jp-v3-catalog-sidebar input[type="radio"],.jp-v3-catalog-sidebar input[type="checkbox"] {accent-color:#bd4929;}
+.jp-v3-catalog-results {min-width:0;}
+.jp-v3-results-head {display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:25px;}
+.jp-v3-results-head h2 {font-family:var(--font-display);font-size:clamp(32px,3.5vw,48px);font-weight:750;letter-spacing:-.045em;line-height:1.1;margin-top:8px;}
+.jp-v3-results-head>p {font-size:12px;color:#736c65;font-weight:700;white-space:nowrap;}
+.jp-v3-catalog-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
+.jp-v3-catalog-grid .jp-interactive-card {height:100%;}
+.jp-v3-catalog-grid .jp-interactive-card h3 {font-family:var(--font-display);font-size:22px;}
+.jp-v3-catalog-empty {position:relative;min-height:350px;display:flex;align-items:center;justify-content:center;}
+.jp-v3-catalog-empty>.jp-v3-catalog-empty-mark {pointer-events:none;position:absolute;font-size:300px;line-height:1;color:#ecdcd3;z-index:-1;}
+.jp-v3-catalog-empty>div {width:100%;border-style:solid;border-radius:25px;background:rgba(255,255,255,.9);padding:70px 25px;}
+/* Auth page frame: split identity onboarding, mobile naturally single column. */
+.jp-v3-auth-page {display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);min-height:100svh;background:#fcf9f5;}
+.jp-v3-auth-story {position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-height:100%;background:linear-gradient(145deg,#192020,#202628);color:#fff6e9;padding:clamp(28px,4.5vw,70px);}
+.jp-v3-auth-brand {display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.jp-v3-auth-brand .jp-brand-logo {color:#fff7ef;}
+.jp-v3-auth-brand>span {font-size:9px;font-weight:900;letter-spacing:.15em;color:#bba69c;}
+.jp-v3-auth-poster {position:relative;z-index:1;padding-block:65px;}
+.jp-v3-auth-poster>span {font-size:10px;font-weight:900;letter-spacing:.17em;color:#ffba94;}
+.jp-v3-auth-poster h2 {font-family:var(--font-display);font-size:clamp(55px,5.2vw,92px);font-weight:750;letter-spacing:-.08em;line-height:.96;margin-top:26px;}
+.jp-v3-auth-poster h2 em {font-weight:550;color:#ff8c69;}
+.jp-v3-auth-poster p {margin-top:24px;color:#bdbdb7;font-size:15px;line-height:1.7;}
+.jp-v3-auth-design {z-index:-1;position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.jp-v3-auth-design::before {content:"";position:absolute;left:-28%;bottom:-22%;width:720px;height:720px;border:1px solid rgba(255,255,255,.12);border-radius:50%;box-shadow:0 0 0 65px rgba(255,255,255,.05),0 0 0 135px rgba(255,255,255,.024);}
+.jp-v3-auth-design>span {position:absolute;right:-120px;bottom:-150px;font-size:540px;line-height:1;color:#ca603b22;}
+.jp-v3-auth-brief {padding-top:26px;border-top:1px solid #ffffff30;font-size:9px;letter-spacing:.18em;font-weight:800;color:#aeb6b1;}
+.jp-v3-auth-main {min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(22px,4vw,64px);background:#fcf9f5;}
+.jp-v3-auth-content {width:min(100%,610px);margin:0 auto;padding:clamp(28px,5vw,60px) clamp(20px,3vw,50px);background:white;border:1px solid #eee7dd;border-radius:28px;box-shadow:0 25px 72px rgba(35,29,22,.035);}
+.jp-v3-auth-content .jp-signup-form {margin-top:43px;}
+.jp-v3-auth-content .jp-signup-steps {margin-top:33px;}
+.jp-v3-auth-content .auth-form-panel {margin-top:42px;}
+.jp-v3-auth-content .auth-input {background:#fefefe;border-radius:12px;}
+.jp-v3-auth-content .jp-account-choice {min-height:225px;}
+.jp-v3-auth-policy {width:min(100%,610px);padding:19px 12px 0;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#9d938b;font-size:10px;font-weight:800;letter-spacing:.08em;}
+.jp-v3-auth-policy a {color:#625b55;text-decoration:underline;text-underline-offset:3px;white-space:nowrap;}
+/* Dashboard information architecture: calm desktop rail, mobile scrollable tabs. */
+.jp-v3-dashboard-shell {width:100%;max-width:1590px;margin:0 auto;padding:clamp(20px,3vw,46px) clamp(16px,3.5vw,55px) 90px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:clamp(22px,3.2vw,54px);align-items:start;}
+.jp-v3-dashboard-sidebar {position:sticky;top:105px;min-width:0;display:flex;flex-direction:column;background:white;border:1px solid #e7e0d7;border-radius:22px;padding:25px 17px;box-shadow:0 12px 40px rgba(31,25,18,.035);}
+.jp-v3-dashboard-identity {padding:0 11px 22px;border-bottom:1px solid #e9e4dc;}
+.jp-v3-dashboard-identity>span {display:inline-block;padding:6px 9px;border-radius:9px;background:#fff0e8;color:#ad452b;font-size:9px;letter-spacing:.14em;font-weight:950;}
+.jp-v3-dashboard-identity h1 {font-family:var(--font-display);font-weight:750;font-size:29px;letter-spacing:-.04em;line-height:1.1;margin-top:16px;}
+.jp-v3-dashboard-identity p {font-size:11px;line-height:1.5;color:#7b736c;word-break:break-word;margin-top:7px;}
+.jp-v3-dashboard-links {display:flex;flex-direction:column;gap:4px;padding-top:22px;max-width:100%;min-width:0;overflow:visible!important;flex-wrap:nowrap!important;}
+.jp-v3-dashboard-links a {display:flex;align-items:center;gap:11px;border-radius:12px;min-height:43px;padding:10px 12px;font-size:12px;font-weight:800;color:#625c55;transition:background .18s,color .18s;}
+.jp-v3-dashboard-links a:hover {background:#f8f1e9;color:#bd4929;}
+.jp-v3-dashboard-links a[aria-current="page"] {background:#191918;color:white;}
+.jp-v3-dashboard-navnumber {font-size:10px;font-weight:800;color:#ac9e92;}
+.jp-v3-dashboard-links a[aria-current="page"] .jp-v3-dashboard-navnumber {color:#ecb694;}
+.jp-v3-dashboard-main {min-width:0;padding-bottom:35px;}
+.jp-v3-dashboard-heading {display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:1px solid #e6ded6;margin-bottom:29px;padding-bottom:16px;}
+.jp-v3-dashboard-heading span {font-weight:900;letter-spacing:.14em;font-size:10px;color:#ac492c;}
+.jp-v3-dashboard-heading a {font-size:12px;font-weight:850;color:#2f2a26;text-decoration:underline;text-underline-offset:4px;white-space:nowrap;}
+.jp-v3-dashboard-main h1 {letter-spacing:-.045em;}
+.jp-v3-dashboard-main section>h2,.jp-v3-dashboard-main .display-md {letter-spacing:-.03em;}
+.jp-v3-dashboard-main .rounded-card,.jp-v3-dashboard-main .rounded-xl {border-radius:17px;}
+.jp-v3-dashboard-main input,.jp-v3-dashboard-main select {max-width:100%;}
+.jp-v3-dashboard-main a:focus-visible {outline-color:#ca4c2c;}
+.jp-v3-dashboard-audit {margin-top:55px;padding-top:24px;border-top:1px solid #e7e0d9;color:#898078;font-size:12px;}
+.jp-v3-dashboard-audit a {color:#ac462a;text-decoration:underline;}
+/* Additional individual dashboard behavior */
+.jp-v3-personal-dashboard {padding-block:32px;}
+.jp-v3-personal-hero {padding:clamp(26px,5vw,57px);border-radius:24px;background:#1f2424;color:white;position:relative;overflow:hidden;}
+.jp-v3-personal-hero::after {content:"✳";font-size:350px;position:absolute;right:-45px;top:-130px;line-height:1;color:#ffffff0c;}
+.jp-v3-personal-hero .eyebrow {color:#f2a181;}
+.jp-v3-personal-hero h2 {font-family:var(--font-display);font-size:clamp(35px,5vw,60px);line-height:1.05;letter-spacing:-.05em;max-width:12ch;margin-top:15px;}
+.jp-v3-personal-hero p:last-child {margin-top:14px;color:#c1c9c6;max-width:48ch;line-height:1.6;}
+.jp-v3-personal-shortcuts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:21px;}
+.jp-v3-personal-shortcut {min-height:180px;padding:27px;background:white;border:1px solid #e7e0d8;border-radius:19px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .2s,border-color .2s;}
+.jp-v3-personal-shortcut:hover {transform:translateY(-3px);border-color:#c99b80;}
+.jp-v3-personal-shortcut h3 {font-family:var(--font-display);font-size:25px;letter-spacing:-.03em;font-weight:700;}
+.jp-v3-personal-shortcut p {color:#706961;font-size:13px;line-height:1.55;margin-top:9px;}
+.jp-v3-personal-shortcut>span {font-size:13px;font-weight:850;color:#ae492c;margin-top:14px;}
+@media (max-width: 1150px) {
+ .jp-v3-pricing-layout {gap:28px;}
+ .jp-v3-pricing-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .jp-v3-auth-page {grid-template-columns:.75fr 1.25fr;}
+ .jp-v3-auth-poster h2 {font-size:clamp(44px,5vw,71px);}
+}
+@media (max-width: 900px) {
+ .jp-v3-auth-page {grid-template-columns:1fr;}
+ .jp-v3-auth-story {display:none;}
+ .jp-v3-auth-main {padding:30px 22px 65px;}
+ .jp-v3-auth-content {max-width:750px;}
+ .jp-v3-pricing-layout {grid-template-columns:1fr;}
+ .jp-v3-fee-card {width:min(100%,650px);}
+ .jp-v3-catalog-body {grid-template-columns:1fr;gap:25px;padding-block:43px 70px;}
+ .jp-v3-catalog-sidebar {position:static;}
+ .jp-v3-catalog-sidebar form {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px!important;align-items:start;}
+ .jp-v3-catalog-sidebar form>div:first-child {grid-column:1/-1;}
+ .jp-v3-catalog-sidebar form>label {padding-top:10px;}
+ .jp-v3-dashboard-shell {grid-template-columns:1fr;gap:20px;}
+ .jp-v3-dashboard-sidebar {position:static;padding:16px 0;background:transparent;border:0;box-shadow:none;border-bottom:1px solid #e6dcd2;border-radius:0;}
+ .jp-v3-dashboard-identity {padding:0 3px 15px;border:0;}
+ .jp-v3-dashboard-identity h1 {font-size:27px;margin-top:8px;}
+ .jp-v3-dashboard-links {display:flex;flex-direction:row;overflow-x:auto!important;flex-wrap:nowrap!important;padding:4px 0 10px;scrollbar-width:thin;gap:5px;}
+ .jp-v3-dashboard-links a {min-height:44px;flex:none;white-space:nowrap;border:1px solid #e4dcd3;background:white;padding:10px 14px;}
+ .jp-v3-dashboard-navnumber {display:none;}
+ .jp-v3-dashboard-main {width:100%;min-width:0;}
+}
+@media (max-width: 650px) {
+ .jp-v3-pricing-layout {padding-block:65px;gap:36px;}
+ .jp-v3-pricing-hero h1 {font-size:clamp(56px,12.5vw,77px);}
+ .jp-v3-pricing-hero p {font-size:14px;}
+ .jp-v3-fee-card {min-height:380px;padding:29px;border-radius:23px;}
+ .jp-v3-fee-number {font-size:133px;margin-top:18px;}
+ .jp-v3-fee-deco {font-size:290px;right:-19px;bottom:-30px;}
+ .jp-v3-pricing-grid {grid-template-columns:1fr;}
+ .jp-v3-pricing-feature {min-height:0;}
+ .jp-v3-pricing-banner-inner {min-height:0;flex-direction:column;align-items:flex-start;padding-block:72px;}
+ .jp-v3-pricing-banner h2 {font-size:58px;}
+ .jp-v3-catalog-hero .jp-v3-container {min-height:280px;padding-block:68px 58px;}
+ .jp-v3-catalog-hero h1 {font-size:clamp(55px,12vw,77px);}
+ .jp-v3-catalog-hero p {font-size:14px;}
+ .jp-v3-catalog-asterisk {font-size:320px;right:-65px;top:-40px;}
+ .jp-v3-catalog-sidebar form {grid-template-columns:1fr;gap:15px!important;}
+ .jp-v3-results-head h2 {font-size:35px;}
+ .jp-v3-catalog-grid {grid-template-columns:1fr;gap:14px;}
+ .jp-v3-auth-main {padding:0 0 45px;}
+ .jp-v3-auth-content {border:0;border-radius:0;box-shadow:none;padding:32px 22px 42px;}
+ .jp-v3-auth-policy {padding:12px 25px 18px;}
+ .jp-v3-auth-content .jp-account-choice {min-height:220px;}
+ .jp-v3-dashboard-shell {padding:23px 16px 65px;}
+ .jp-v3-dashboard-main {padding-bottom:20px;}
+ .jp-v3-dashboard-heading {align-items:start;gap:10px;}
+ .jp-v3-dashboard-heading span {font-size:9px;letter-spacing:.08em;}
+ .jp-v3-dashboard-main>div:first-child:not(.jp-v3-dashboard-heading) {max-width:100%;}
+ .jp-v3-personal-shortcuts {grid-template-columns:1fr;}
+ .jp-v3-personal-shortcut {min-height:150px;}
+}
+@media (prefers-reduced-motion: reduce) {
+ .jp-v3-pricing-feature,.jp-v3-personal-shortcut {transition:none!important;transform:none!important;}
+}

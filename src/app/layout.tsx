@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Archivo } from "next/font/google";
 import "./globals.css";
 import "lenis/dist/lenis.css";
+import "./jaiye-v3-pages.css";
 import { ExperienceMotion } from "@/components/motion/experience-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
