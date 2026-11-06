@@ -82,12 +82,15 @@ export default async function HostOverviewPage() {
             <p className="mt-2 max-w-prose text-sm text-danger">{org.verification_note}</p>
           )}
         </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/host/scanner" className="rounded-card border border-line bg-white px-5 py-3 text-sm font-bold text-ink hover:border-neon-deep">Scan tickets</Link>
         <Link
           href="/host/events/new"
           className="rounded-card bg-neon px-5 py-3 text-sm font-bold text-white hover:bg-neon-deep"
         >
           Create an event
         </Link>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">

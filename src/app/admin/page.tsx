@@ -12,7 +12,7 @@ export default async function AdminReviewQueue() {
 
   const admin = createAdminClient();
 
-  const [{ data: queue, error: queueError }, { count: published, error: publishedError }, { data: featuredable, error: featuredError }, { count: users }, { count: organizers }, { count: paidOrders }, { count: pendingPayouts }] = await Promise.all([
+  const [{ data: queue, error: queueError }, { count: published, error: publishedError }, { data: featuredable, error: featuredError }, { count: users }, { count: organizers }, { count: paidOrders }, { count: pendingPayouts }, { count: openReports }] = await Promise.all([
     admin
       .from("events")
       .select(
@@ -34,6 +34,7 @@ export default async function AdminReviewQueue() {
     admin.from("organizations").select("id", { head: true, count: "exact" }),
     admin.from("orders").select("id", { head: true, count: "exact" }).eq("status", "paid"),
     admin.from("payouts").select("id", { head: true, count: "exact" }).eq("status", "pending"),
+    admin.from("event_reports").select("id", { head: true, count: "exact" }).in("status", ["open", "reviewing"]),
   ]);
 
   return (
@@ -47,12 +48,17 @@ export default async function AdminReviewQueue() {
 
       {(queueError || publishedError || featuredError) && <p role="alert" className="text-sm font-semibold text-danger">Admin data could not be loaded. Check Supabase configuration and server logs.</p>}
       <section aria-label="Platform overview" className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[ ["Users", users], ["Organizers", organizers], ["Paid orders", paidOrders], ["Pending payouts", pendingPayouts] ].map(([label, count]) => (
+        {[ ["Users", users], ["Organizers", organizers], ["Paid orders", paidOrders], ["Pending payouts", pendingPayouts], ["Reports to review", openReports] ].map(([label, count]) => (
           <div key={String(label)} className="rounded-card border border-line bg-white p-4">
             <p className="text-xs font-semibold text-ink-faint">{label}</p>
             <p className="mt-2 text-2xl font-extrabold">{count ?? "—"}</p>
           </div>
         ))}
+      </section>
+      <section className="rounded-xl border border-line bg-white p-5">
+        <h2 className="text-lg font-bold">Platform reports</h2>
+        <p className="mt-2 text-sm text-ink-soft">Review attendee complaints, ticket scans, payments, refunds and payouts.</p>
+        <Link href="/admin/reports" className="mt-4 inline-flex rounded-xl bg-neon-deep px-4 py-3 text-sm font-semibold text-white">View all reports</Link>
       </section>
       <section>
         {(!queue || queue.length === 0) ? (

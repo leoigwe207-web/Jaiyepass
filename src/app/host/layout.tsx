@@ -20,7 +20,7 @@ export default async function HostLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="mx-auto max-w-6xl">
-      <HostNav email={user.email} isHost={!!orgId} />
+      <HostNav email={user.email} isHost={!!orgId} isPlatformAdmin={user.role === "admin"} />
       <div className="mt-6">{children}</div>
     </div>
   );

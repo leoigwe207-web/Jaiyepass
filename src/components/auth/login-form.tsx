@@ -31,6 +31,7 @@ export function LoginForm({ next, notice, role }: { next: string; notice?: strin
         <SubmitButton label="Sign in securely" pendingLabel="Signing in…" />
       </form>
       <p className="mt-4 text-center text-sm"><Link className="auth-text-link" href="/choose-account">Choose a different account type</Link></p>
+      {role === "organizer" && <p className="mt-4 text-center text-sm text-ink-soft">Platform administrator? <Link className="auth-text-link" href="/login?next=/admin">Admin sign in</Link></p>}
       <p className="auth-under-form">New to JaiyePass? <Link href={`/signup?role=${role}`} className="auth-text-link">Create an account</Link></p>
     </div>
   );
