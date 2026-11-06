@@ -4,17 +4,17 @@
    Editorial system: warm ivory paper, deep ink type, one vivid Lagos-night
    accent (electric pink used sparingly), brass secondary for micro-details. */
 @theme {
-  --color-paper: #f7f3ea; /* warm ivory surface */
-  --color-paper-deep: #efe8db; /* alternating section surface */
-  --color-paper-dim: #e6dccb; /* wells, input fills */
-  --color-ink: #16120e; /* deep ink text */
-  --color-ink-soft: #4a443c; /* secondary text */
-  --color-ink-faint: #7a7266; /* meta text, ≥4.5:1 on paper */
-  --color-line: #d8cfbe; /* hairline rules */
-  --color-night: #1b0f2e; /* deep violet-night panels */
-  --color-night-soft: #2a1a45;
-  --color-neon: #ff2e63; /* Lagos nightlife accent — CTAs, live states */
-  --color-neon-deep: #d9003f; /* hover / text-on-ivory variant */
+  --color-paper: #fffaf7; /* warm ivory surface */
+  --color-paper-deep: #fff2eb; /* alternating section surface */
+  --color-paper-dim: #f5e6de; /* wells, input fills */
+  --color-ink: #1f1d1b; /* deep ink text */
+  --color-ink-soft: #59534f; /* secondary text */
+  --color-ink-faint: #736c67; /* meta text, ≥4.5:1 on paper */
+  --color-line: #e8dcd5; /* hairline rules */
+  --color-night: #202026; /* deep violet-night panels */
+  --color-night-soft: #302b2b;
+  --color-neon: #f9673f; /* Lagos nightlife accent — CTAs, live states */
+  --color-neon-deep: #bd421e; /* hover / text-on-ivory variant */
   --color-brass: #a0741a; /* micro accents, sold counts (AA on ivory) */
   --color-success: #146b3a;
   --color-warning: #8a5a00;
@@ -23,7 +23,7 @@
   --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
 
-  --radius-card: 4px; /* editorial: sharp, not pill-heavy */
+  --radius-card: 12px; /* editorial: sharp, not pill-heavy */
 }
 
 html {
@@ -345,3 +345,72 @@ body {
 .jp-category-card[data-category="nightlife"]{border-top:4px solid #226f6e;}
 .jp-category-card[data-category="art-culture"]{border-top:4px solid #7561a8;}
 @media (prefers-reduced-motion: reduce){.jp-category-card,.jp-category-card:hover{transform:none;}}
+
+
+/* JaiyePass mobile-first discovery and onboarding refresh. */
+.jp-brand-logo, .jp-auth-wordmark { display:inline-flex;align-items:center;gap:0;font-family:var(--font-sans);font-size:clamp(1.6rem, 3vw, 2rem);font-weight:850;letter-spacing:-.07em;color:var(--color-ink);text-decoration:none;line-height:1.15;white-space:nowrap; }
+.jp-brand-logo>span:first-child, .jp-auth-wordmark>span:first-child {color:var(--color-neon-deep);}
+.jp-logo-star { font-size:17px;font-weight:400;color:var(--color-neon);letter-spacing:0;margin-left:4px;align-self:flex-start;}
+.jp-button-primary, .jp-button-secondary {display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:750;transition:background-color .2s ease,transform .2s ease;}
+.jp-button-primary {background:var(--color-neon-deep);color:#fff;}
+.jp-button-primary:hover:not(:disabled) {background:#983317;transform:translateY(-1px);}
+.jp-button-secondary {background:#fff;border:1px solid #c9bcb6;color:var(--color-ink);}
+.jp-button-secondary:hover {background:var(--color-paper-deep);}
+.jp-mobile-drawer {height:100dvh;overflow:hidden;}
+.jp-mini-eyebrow {font-size:11px;font-weight:850;letter-spacing:.17em;color:var(--color-neon-deep);}
+.jp-screen-heading {font-family:var(--font-sans);font-size:clamp(2.1rem, 5vw, 3rem);font-weight:850;line-height:1.12;letter-spacing:-.05em;margin-top:18px;}
+.jp-section-title {font-family:var(--font-sans);font-size:clamp(1.55rem, 3vw, 2.4rem);font-weight:850;line-height:1.16;letter-spacing:-.04em;}
+.jp-discover-intro {background:linear-gradient(120deg,#fff9f5 0%,#fff 82%);border-bottom:1px solid var(--color-line);}
+.jp-home-title {font-family:var(--font-sans);font-size:clamp(2.4rem,6vw,4.2rem);font-weight:900;line-height:1.06;letter-spacing:-.055em;}
+.jp-home-title span {color:var(--color-neon-deep);}
+.jp-home-search {display:flex;align-items:stretch;gap:7px;padding:6px;border:1px solid var(--color-line);border-radius:16px;background:white;box-shadow:0 10px 30px rgb(75 43 30 / .065);}
+.jp-city-chip {display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--color-line);border-radius:99px;background:white;padding:9px 14px;font-size:12px;font-weight:750;color:var(--color-ink-soft);white-space:nowrap;}
+.jp-city-chip:hover {color:var(--color-neon-deep);border-color:var(--color-neon);}
+.jp-filter-chip {display:inline-flex;flex:none;min-height:40px;align-items:center;justify-content:center;border:1px solid var(--color-line);border-radius:99px;padding:8px 15px;font-size:12px;font-weight:750;white-space:nowrap;background:#fff;}
+.jp-filter-chip.active {background:var(--color-ink);border-color:var(--color-ink);color:white;}
+.jp-filter-chip:hover:not(.active) {background:var(--color-paper-deep);}
+.jp-home-placeholder {position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;min-height:290px;border-radius:20px;background:linear-gradient(125deg,#202026 0%,#392928 68%,#bd421e 160%);padding:32px;}
+.jp-home-placeholder-star {position:absolute;z-index:-1;right:-15px;bottom:-80px;font-size:320px;line-height:1;color:rgb(255 255 255 / .07);transform:rotate(-12deg);}
+.jp-home-event-row {display:flex;gap:16px;align-items:stretch;min-width:0;padding:12px;border:1px solid var(--color-line);border-radius:16px;background:white;transition:box-shadow .2s ease,border-color .2s ease;}
+.jp-home-event-row:hover {border-color:#dab3a2;box-shadow:0 8px 20px rgb(0 0 0 / .055);}
+.jp-auth-shell {width:min(100%,700px);min-height:calc(100svh - 190px);margin:0 auto;padding:clamp(28px,6vw,58px) 24px 80px;background:#fff;}
+.jp-auth-wordmark {font-size:2rem;}
+.jp-signup-form {margin-top:clamp(38px,6vw,76px);}
+.jp-signup-steps {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:42px;position:relative;}
+.jp-signup-steps::before {content:"";position:absolute;z-index:0;height:1px;background:#c9c4c1;top:13px;left:13%;right:13%;}
+.jp-signup-steps li {z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#7c7774;font-size:11px;}
+.jp-signup-steps li:first-child {align-items:flex-start;text-align:left;}
+.jp-signup-steps li:last-child {align-items:flex-end;text-align:right;}
+.jp-step-number {width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid #b7afaa;border-radius:50%;background:#fff;color:#7c7774;font-size:12px;font-weight:850;}
+.jp-signup-steps .current {color:var(--color-neon-deep);font-weight:750;}
+.jp-signup-steps .current .jp-step-number,.jp-signup-steps .complete .jp-step-number {background:var(--color-neon-deep);border-color:var(--color-neon-deep);color:white;}
+.jp-signup-steps .complete {color:#55504e;}
+.jp-account-choice {display:flex;min-height:250px;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:1.5px solid var(--color-line);border-radius:16px;background:white;padding:22px;text-align:center;transition:border-color .15s ease,box-shadow .15s ease;}
+.jp-account-choice svg,.jp-account-symbol {color:#8e8984;}
+.jp-account-choice.selected, .jp-account-choice:hover {border-color:var(--color-neon-deep);box-shadow:0 6px 24px rgb(152 73 39 / .09);}
+.jp-account-choice.selected svg,.jp-account-choice.selected .jp-account-symbol {color:var(--color-neon-deep);}
+.jp-choice-radio {display:flex;width:25px;height:25px;align-items:center;justify-content:center;border:1.5px solid #cac4c0;border-radius:50%;font-size:12px;color:white;background:white;}
+.jp-account-choice.selected .jp-choice-radio {border-color:var(--color-neon-deep);background:var(--color-neon-deep);}
+.jp-account-symbol {font-size:3.3rem;line-height:1;}
+.jp-confirm-mark {display:flex;width:64px;height:64px;align-items:center;justify-content:center;border-radius:50%;background:#ecf8ee;color:#177a43;font-size:28px;font-weight:bold;}
+.jp-auth-shell .auth-form-panel {max-width:620px;}
+.jp-auth-shell .auth-title {font-family:var(--font-sans);font-size:clamp(2.15rem,5vw,3rem);letter-spacing:-.045em;}
+.jp-auth-shell .auth-input {border-color:#d8d3cf;border-radius:12px;background:white;}
+.jp-auth-shell .auth-input:focus-visible {border-color:var(--color-neon-deep);box-shadow:0 0 0 3px rgb(249 103 63 / .16);}
+.jp-auth-shell .auth-form .jp-submit-button {width:100%;min-height:48px;border-radius:12px;background:var(--color-neon-deep);font-size:14px;}
+.jp-auth-shell .auth-form .jp-submit-button:hover:not(:disabled) {background:#983317;}
+.jp-auth-shell .auth-text-link {color:var(--color-neon-deep);}
+.jp-pricing-page {background:#fff;}
+.jp-price-panel {width:min(100%,460px);padding:36px 25px;border:1px solid #f4dcd0;border-radius:20px;background:#fff7f3;box-shadow:0 8px 30px rgb(75 43 30 / .04);}
+.jp-feature-panel {min-height:270px;padding:30px 26px;border:1px solid var(--color-line);border-radius:18px;background:white;box-shadow:0 4px 19px rgb(0 0 0 / .024);}
+.jp-feature-icon {display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:#fff1eb;color:var(--color-neon-deep);font-size:24px;}
+.jp-pricing-contact {overflow:hidden;border-radius:20px;background:linear-gradient(125deg,#ef613a,#ce4322);color:white;padding:46px 26px;text-align:center;}
+.jp-new-footer .jp-brand-logo {font-size:1.75rem;}
+@media(max-width:640px) {
+  .jp-auth-shell {min-height:calc(100svh - 70px);padding:34px 24px 60px;}
+  .jp-signup-form {margin-top:50px;}
+  .jp-signup-steps {margin-top:38px;}
+  .jp-step-label {white-space:normal;font-size:10px;}
+  .jp-home-event-row {padding:11px;gap:12px;}
+  .jp-feature-panel {min-height:unset;}
+}

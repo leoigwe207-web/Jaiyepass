@@ -1,60 +1,29 @@
 import Link from "next/link";
 
-const columns = [
-  {
-    heading: "Discover",
-    links: [
-      { href: "/events", label: "Browse events" },
-      { href: "/events?date=today", label: "Events happening today" },
-      { href: "/events?price=free", label: "Free this weekend" },
-      { href: "/collections", label: "Collections" },
-    ],
-  },
-  {
-    heading: "Company",
-    links: [
-      { href: "/about", label: "About" },
-      { href: "/privacy", label: "Privacy" },
-      { href: "/terms", label: "Terms" },
-      { href: "/refunds", label: "Refund policy" },
-    ],
-  },
+const groups = [
+  { title: "Discover", links: [{ href: "/events", label: "Browse events" }, { href: "/events?price=free", label: "Free events" }, { href: "/events?date=weekend", label: "This weekend" }, { href: "/collections", label: "Collections" }] },
+  { title: "Explore", links: [{ href: "/#how-it-works", label: "How it works" }, { href: "/pricing", label: "Pricing" }, { href: "/signup", label: "Create an account" }, { href: "/help", label: "Help centre" }] },
+  { title: "Company", links: [{ href: "/about", label: "About us" }, { href: "/contact", label: "Contact" }, { href: "/privacy", label: "Privacy" }, { href: "/terms", label: "Terms" }] },
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-paper-deep">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+    <footer className="jp-new-footer border-t border-line bg-paper-deep">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
-          <p className="font-[family-name:var(--font-fraunces)] text-2xl font-extrabold">
-            Jaiye<span className="text-neon-deep">Pass</span>
-          </p>
-          <p className="mt-2 max-w-xs text-sm text-ink-soft">
-            Your pass to a good time. Find experiences, meet your people and
-            book memorable events across Nigeria.
-          </p>
+          <p className="jp-brand-logo">Jaiye<span>Pass</span><span className="jp-logo-star" aria-hidden="true">✳</span></p>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">Your pass to a good time. Discover events, book securely, and make memories across Nigeria.</p>
         </div>
-        {columns.map((col) => (
-          <nav key={col.heading} aria-label={col.heading}>
-            <h2 className="eyebrow">{col.heading}</h2>
-            <ul className="mt-3 space-y-2">
-              {col.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-sm text-ink-soft hover:text-ink hover:underline">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
+        {groups.map(group => (
+          <nav key={group.title} aria-label={group.title}>
+            <h2 className="text-sm font-bold">{group.title}</h2>
+            <ul className="mt-4 space-y-3">
+              {group.links.map(link => <li key={link.href}><Link href={link.href} className="text-sm text-ink-soft hover:text-neon-deep">{link.label}</Link></li>)}
             </ul>
           </nav>
         ))}
       </div>
-      <div className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-ink-faint sm:flex-row sm:justify-between sm:px-6">
-          <p>© {new Date().getFullYear()} JaiyePass. Lagos, Nigeria.</p>
-          <p>Made for real experiences across Nigeria.</p>
-        </div>
-      </div>
+      <div className="border-t border-line px-5 py-5 text-center text-xs text-ink-faint">© {new Date().getFullYear()} JaiyePass · Made for experiences across Nigeria.</div>
     </footer>
   );
 }

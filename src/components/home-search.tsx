@@ -3,62 +3,32 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-/** Hero search: query + city, pushes to the browse page. */
 export function HomeSearch({ cities }: { cities: { name: string; slug: string }[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
-
   return (
-    <form
-      role="search"
-      aria-label="Search events"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const params = new URLSearchParams();
-        if (q.trim()) params.set("q", q.trim());
-        if (city) params.set("city", city);
-        router.push(`/events?${params.toString()}`);
-      }}
-      className="flex flex-col gap-2 sm:flex-row rounded-card border border-white/20 bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,.12)]"
-    >
-      <div className="relative flex-1">
-        <label htmlFor="hero-q" className="sr-only">
-          Search events
-        </label>
-        <input
-          id="hero-q"
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search artists, venues, vibes…"
-          className="w-full rounded-card border border-line bg-white px-4 py-3.5 text-base placeholder:text-ink-faint"
-        />
+    <form role="search" aria-label="Find events" className="jp-home-search" onSubmit={(event) => {
+      event.preventDefault();
+      const params = new URLSearchParams();
+      if (q.trim()) params.set("q", q.trim());
+      if (city) params.set("city", city);
+      router.push("/events" + (params.size ? "?" + params.toString() : ""));
+    }}>
+      <div className="flex-1">
+        <label htmlFor="home-search-q" className="sr-only">Artist, venue or event</label>
+        <input id="home-search-q" type="search" value={q} onChange={event => setQ(event.target.value)} placeholder="Search artists, events, venues…" className="w-full bg-transparent px-3 py-3 text-sm outline-none placeholder:text-ink-faint sm:text-base" />
       </div>
-      <div className="sm:w-48">
-        <label htmlFor="hero-city" className="sr-only">
-          City
-        </label>
-        <select
-          id="hero-city"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className="w-full rounded-card border border-line bg-white px-4 py-3.5 text-base"
-        >
-          <option value="">All Nigeria</option>
-          {cities.filter((c) => c.slug !== "accra").map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <button
-        type="submit"
-        className="rounded-card bg-ink px-6 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-night"
-      >
-        Search
-      </button>
+      {cities.length > 0 && (
+        <div className="hidden sm:block sm:w-44">
+          <label htmlFor="home-search-city" className="sr-only">City</label>
+          <select id="home-search-city" value={city} onChange={event => setCity(event.target.value)} className="w-full border-l border-line bg-transparent px-3 py-3 text-sm text-ink-soft">
+            <option value="">All Nigeria</option>
+            {cities.filter(cityItem => cityItem.slug !== "accra").map(cityItem => <option key={cityItem.slug} value={cityItem.slug}>{cityItem.name}</option>)}
+          </select>
+        </div>
+      )}
+      <button type="submit" aria-label="Search events" className="jp-button-primary min-w-24 !rounded-xl">Search</button>
     </form>
   );
 }

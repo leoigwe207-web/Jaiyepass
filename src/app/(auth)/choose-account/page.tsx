@@ -11,30 +11,32 @@ export default async function ChooseAccountPage() {
   if (user) {
     if (user.role === "admin") redirect("/admin");
     if (await getManagedOrgId(user.id)) redirect("/host");
-    // An organizer can finish organization setup after signing in.
     const { createClient } = await import("@/lib/supabase/server");
     const client = await createClient();
     const { data: { user: authUser } } = await client.auth.getUser();
     redirect(authUser?.user_metadata?.account_type === "organizer" ? "/host" : "/account");
   }
   return (
-    <div className="auth-form-panel">
-      <p className="auth-kicker"><span className="auth-kicker-dot" /> WELCOME TO JAIYEPASS</p>
-      <h1 className="auth-title">How will you use JaiyePass?</h1>
-      <p className="auth-description">Choose your account type to get the right sign-in and dashboard experience.</p>
-      <div className="mt-8 grid gap-4">
-        <Link href="/login?role=individual" className="block rounded-card border border-line bg-white p-5 transition hover:border-neon-deep">
-          <span className="block text-xl font-bold">Individual</span>
-          <span className="mt-1 block text-sm text-ink-soft">Discover events, buy tickets, and manage bookings.</span>
-          <span className="mt-3 block text-sm font-semibold text-neon-deep">Continue as an individual →</span>
+    <div className="jp-signup-form">
+      <p className="text-sm font-semibold text-neon-deep">WELCOME BACK</p>
+      <h1 className="jp-screen-heading">How do you use JaiyePass?</h1>
+      <p className="mt-3 leading-relaxed text-ink-soft">Select an account to open the right sign-in page and dashboard.</p>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <Link href="/login?role=individual" className="jp-account-choice group">
+          <span className="jp-account-symbol" aria-hidden="true">◯</span>
+          <span className="text-xl font-bold">Individual</span>
+          <span className="text-sm leading-relaxed text-ink-soft">Manage tickets, orders, saved events and your plans.</span>
+          <span className="text-sm font-bold text-neon-deep">Continue to sign in →</span>
         </Link>
-        <Link href="/login?role=organizer" className="block rounded-card border border-line bg-white p-5 transition hover:border-neon-deep">
-          <span className="block text-xl font-bold">Organizer</span>
-          <span className="mt-1 block text-sm text-ink-soft">Create events, manage attendees, and monitor ticket sales.</span>
-          <span className="mt-3 block text-sm font-semibold text-neon-deep">Continue as an organizer →</span>
+        <Link href="/login?role=organizer" className="jp-account-choice group">
+          <span className="jp-account-symbol" aria-hidden="true">▣</span>
+          <span className="text-xl font-bold">Organizer</span>
+          <span className="text-sm leading-relaxed text-ink-soft">Manage event listings, ticket sales and check-in.</span>
+          <span className="text-sm font-bold text-neon-deep">Continue to sign in →</span>
         </Link>
       </div>
-      <p className="auth-under-form">Just browsing? <Link href="/events" className="auth-text-link">Explore events without signing in</Link></p>
+      <p className="mt-8 text-center text-sm text-ink-soft">New here? <Link className="auth-text-link" href="/signup">Create an account</Link></p>
+      <p className="mt-4 text-center text-sm text-ink-soft"><Link className="auth-text-link" href="/events">Browse without signing in</Link></p>
     </div>
   );
 }
