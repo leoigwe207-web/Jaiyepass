@@ -136,8 +136,21 @@ export async function signupAction(_prev: AuthFormState, formData: FormData): Pr
   if (!rl.ok) return { error: `Too many signup attempts. Try again in ${rl.retryAfterSeconds}s.` };
   const accountType = formData.get("accountType");
   if (accountType !== "organizer" && accountType !== "individual") return { error: "Choose an account type before registering." };
+  if (formData.get("termsAccepted") !== "yes") return { error: "Please agree to the Terms and Privacy Policy." };
+  if (formData.get("password") !== formData.get("confirmPassword")) return { error: "Passwords do not match." };
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  if (!firstName || !lastName || firstName.length > 60 || lastName.length > 60) return { error: "Enter your first and last name." };
+  const fullName = [firstName, lastName].join(" ");
+  const orgName = String(formData.get("organizationName") ?? "").trim().slice(0, 100);
+  const permittedCities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Other"];
+  const eventCityValue = String(formData.get("eventCity") ?? "");
+  const eventCity = permittedCities.includes(eventCityValue) ? eventCityValue : "";
+  const referralValue = String(formData.get("referral") ?? "");
+  const referrals = ["Friends or family", "Social media", "At an event", "Search engine", "Other"];
+  const referral = referrals.includes(referralValue) ? referralValue : "";
   const parsed = signupSchema.safeParse({
-    email: formData.get("email"), password: formData.get("password"), fullName: formData.get("fullName"),
+    email: formData.get("email"), password: formData.get("password"), fullName,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form fields." };
   if (!authConfigured()) return { error: "Account creation is not configured yet. Please contact the site administrator." };
@@ -147,7 +160,7 @@ export async function signupAction(_prev: AuthFormState, formData: FormData): Pr
     const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
-      options: { data: { full_name: parsed.data.fullName, account_type: accountType }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
+      options: { data: { full_name: parsed.data.fullName, account_type: accountType, organization_name: accountType === "organizer" ? orgName : "", event_city: accountType === "organizer" ? eventCity : "", referral_source: referral }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
     });
     if (error) {
       recordAuthFailure("signup", error);
