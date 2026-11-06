@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:env": "node scripts/check-release-env.cjs",
-    "build:next": "next build"
+    "build:next": "next build",
+    "prebuild": "node -e \"const l=require('./package-lock.json');const x=Object.fromEntries(Object.entries(l.packages).filter(([k])=>/^node_modules\\/(?:gsap|lenis|motion(?:-dom|-utils)?|@motionone\\/.+)$/.test(k)));console.log('UI_LOCK_SNAPSHOT='+JSON.stringify(x));\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
