@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import type Lenis from "lenis";
 import { usePathname } from "next/navigation";
 
 /**
@@ -17,7 +18,7 @@ export function ExperienceMotion() {
         pathname?.startsWith("/checkout") || pathname?.startsWith("/scan")) return;
 
     let disposed = false;
-    let lenis: { destroy: () => void; raf: (t: number) => void; on: (e: string, fn: () => void) => void } | null = null;
+    let lenis: Lenis | null = null;
     let cleanup: (() => void) | undefined;
 
     async function boot() {
