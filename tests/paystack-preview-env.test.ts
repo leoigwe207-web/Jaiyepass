@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { paystackKeyAllowed, serverEnv } from "@/lib/env";
+import { paystackKeyAllowed, paidCheckoutConfigured, serverEnv } from "@/lib/env";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -9,6 +9,22 @@ describe("Paystack preview and callback safety", () => {
     expect(paystackKeyAllowed("sk_live_example", "preview")).toBe(false);
     expect(paystackKeyAllowed("", "preview")).toBe(false);
     expect(paystackKeyAllowed("abc", "preview")).toBe(false);
+  });
+
+  it("disables checkout when a live secret is accidentally configured for Preview", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_live_unsafe_on_preview");
+    expect(paidCheckoutConfigured()).toBe(false);
+    expect(serverEnv().testMode).toBe(true);
+  });
+
+  it("enables checkout only after a test secret is configured for Preview", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_test_example");
+    expect(paidCheckoutConfigured()).toBe(true);
+    expect(serverEnv().testMode).toBe(false);
+    vi.stubEnv("PAYSTACK_SECRET_KEY", "");
+    expect(paidCheckoutConfigured()).toBe(false);
   });
 
   it("uses the active Vercel Preview hostname for Paystack callback URLs", () => {

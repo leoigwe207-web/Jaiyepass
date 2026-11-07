@@ -1,7 +1,15 @@
 // Server-only environment access. Import this ONLY from server code.
 
 export function isTestMode(): boolean {
-  return process.env.NODE_ENV !== "production" && !process.env.PAYSTACK_SECRET_KEY;
+  return process.env.NODE_ENV !== "production" && !paidCheckoutConfigured();
+}
+
+/** Prevent a misconfigured Preview secret from showing a payment button.
+ * Paystack itself independently enforces the same check server-side.
+ */
+export function paidCheckoutConfigured(): boolean {
+  const secret = process.env.PAYSTACK_SECRET_KEY ?? "";
+  return Boolean(secret) && paystackKeyAllowed(secret, process.env.VERCEL_ENV);
 }
 
 export function serverEnv() {
@@ -36,7 +44,7 @@ export function serverEnv() {
     ticketPepper,
     emailFrom: process.env.EMAIL_FROM ?? "JaiyePass <no-reply@jaiyepass.com>",
     missing,
-    testMode: process.env.NODE_ENV !== "production" && !paystackSecret,
+    testMode: process.env.NODE_ENV !== "production" && !paidCheckoutConfigured(),
   };
 }
 

@@ -123,10 +123,10 @@ export function CheckoutPanel({
 
       {testMode && !isFree ? (
         <div role="status" className="rounded-card border border-warning/40 bg-warning/5 p-4">
-          <p className="text-sm font-bold text-warning">Paid checkout is not configured</p>
+          <p className="text-sm font-bold text-warning">Paid checkout is temporarily unavailable</p>
           <p className="mt-1 text-sm text-ink-soft">
-            A Paystack test key is required to verify a test transaction and issue tickets.
-            No payment or QR ticket has been created. Ask the site administrator to enable test checkout.
+            This staging site needs a valid Paystack test secret before it can accept test payments.
+            No money has been charged and no ticket has been issued. Please try again after the site administrator updates the payment configuration.
           </p>
         </div>
       ) : (

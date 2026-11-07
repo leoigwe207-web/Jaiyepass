@@ -7,6 +7,7 @@ import { formatKobo } from "@/lib/money";
 import { formatDateTime, relativeDeadline } from "@/lib/format";
 import { CheckoutPanel } from "@/components/checkout/checkout-panel";
 import { CHECKOUT_ORDER_SELECT } from "@/lib/checkout-order-select";
+import { paidCheckoutConfigured } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Checkout" };
 export const dynamic = "force-dynamic";
@@ -168,7 +169,7 @@ export default async function CheckoutPage({ params }: Params) {
             orderId={order.id}
             totalKobo={order.total_kobo}
             isFree={order.total_kobo === 0}
-            testMode={!process.env.PAYSTACK_SECRET_KEY}
+            testMode={!paidCheckoutConfigured()}
             appliedCode={promoCode}
           />
         </section>
