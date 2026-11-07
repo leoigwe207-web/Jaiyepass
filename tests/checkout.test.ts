@@ -8,6 +8,7 @@ const { fromMock, rpcMock } = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: fromMock, rpc: rpcMock }),
 }));
+vi.mock("@/lib/organization-status", () => ({ isOrganizationActive: vi.fn(async () => true) }));
 vi.mock("@/lib/paystack", () => ({
   initializeTransaction: vi.fn(async () => ({ ok: true, authorizationUrl: "https://pay.example/checkout" })),
   verifyTransaction: vi.fn(async () => ({ ok: true, status: "success", amountKobo: 0, currency: "NGN" })),
@@ -21,10 +22,14 @@ vi.mock("@/lib/email", () => ({
 
 import {
   createPendingOrder,
+  deliverReceipt,
   computePromoDiscount,
   verifyAndFinalizeOrder,
 } from "@/lib/checkout";
 import { verifyTransaction } from "@/lib/paystack";
+import { receiptEmail, sendEmail } from "@/lib/email";
+import { guestCheckoutEnabled } from "@/lib/env";
+import { isOrganizationActive } from "@/lib/organization-status";
 
 /** Awaitable chainable stub: supports select/eq/in/insert/update + maybeSingle. */
 function chain<T extends Record<string, unknown>>(result: Partial<T> = {}) {
@@ -136,6 +141,56 @@ describe("createPendingOrder", () => {
       expect(res.status).toBe(409);
       expect(res.error).toContain("Regular");
     }
+  });
+
+  it("refuses guest creation unless server feature flag is enabled", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "false");
+    const res = await createPendingOrder({
+      userId: null, guestName: "Ada Okafor", guestEmail: "ada@example.com",
+      guestTokenHash: "a".repeat(64), eventId, items: [{ ticketTypeId: ttId, quantity: 1 }],
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(403);
+    expect(fromMock).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it("creates a guest order with name/email/hash, never a fake auth ID", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "resend-test");
+    vi.stubEnv("TICKET_TOKEN_PEPPER", "pepper-test");
+    expect(guestCheckoutEnabled()).toBe(true);
+    setupHappyPath();
+    const original = fromMock.getMockImplementation();
+    let insertBody: Record<string, unknown> | null = null;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "orders") {
+        const c = chain({ data: { id: "55555555-5555-4555-8555-555555555555", created_at: "now" } });
+        c.insert = ((row: Record<string, unknown>) => { insertBody = row; return c; }) as typeof c.insert;
+        return c;
+      }
+      return original ? original(table) : chain();
+    });
+    const res = await createPendingOrder({
+      userId: null, guestName: "Ada Okafor", guestEmail: "ada@example.com",
+      guestTokenHash: "a".repeat(64), eventId, items: [{ ticketTypeId: ttId, quantity: 1 }],
+    });
+    if (!res.ok) throw new Error(`Guest creation failed: ${res.error} (HTTP ${res.status})`);
+    expect(res.ok).toBe(true);
+    expect(insertBody).toMatchObject({
+      user_id: null, guest_name: "Ada Okafor",
+      guest_email: "ada@example.com", guest_token_hash: "a".repeat(64),
+    });
+    vi.unstubAllEnvs();
+  });
+
+  it("blocks a paused organizer even when the event remains published", async () => {
+    setupHappyPath();
+    vi.mocked(isOrganizationActive).mockResolvedValueOnce(false);
+    const res = await createPendingOrder({ userId, eventId, items: [{ ticketTypeId: ttId, quantity: 1 }] });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.status).toBe(403);
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
   it("creates order + items with server-computed totals on success", async () => {
@@ -373,5 +428,38 @@ describe("verifyAndFinalizeOrder", () => {
     expect(r.ok).toBe(false);
     expect(rpcMock).not.toHaveBeenCalled();
     expect(fromMock).toHaveBeenCalledWith("orders");
+  });
+});
+
+describe("guest QR ticket email delivery", () => {
+  it("uses the guest booking email without manufacturing a registered profile", async () => {
+    vi.stubEnv("GUEST_CHECKOUT_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "resend-test");
+    vi.stubEnv("TICKET_TOKEN_PEPPER", "test-ticket-pepper");
+    const orderId = "55555555-5555-4555-8555-555555555555";
+    const ticketId = "66666666-6666-4666-8666-666666666666";
+    fromMock.mockImplementation((table: string) => {
+      if (table === "orders") return chain({
+        data: {
+          id: orderId, status: "paid", user_id: null,
+          total_kobo: 10000, paystack_reference: "jp_guest_test",
+          guest_name: "Ada Okafor", guest_email: "ada@example.com",
+          profile: null,
+          event: { title: "Live Music Night", starts_at: "2026-12-10T19:00:00Z" },
+          tickets: [{ id: ticketId, status: "issued" }],
+        },
+      });
+      return chain();
+    });
+    rpcMock.mockResolvedValue({ data: true, error: null });
+    await deliverReceipt(orderId);
+    expect(receiptEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "ada@example.com", name: "Ada Okafor", quantity: 1,
+      qrAttachments: [expect.objectContaining({
+        filename: "JaiyePass-ticket-1.png", content_type: "image/png",
+      })],
+    }));
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    vi.unstubAllEnvs();
   });
 });

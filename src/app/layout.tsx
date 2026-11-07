@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Archivo } from "next/font/google";
 import "./globals.css";
+import "lenis/dist/lenis.css";
+import "./jaiye-v3-pages.css";
+import { ExperienceMotion } from "@/components/motion/experience-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AnalyticsConsentBanner } from "@/components/analytics/analytics";
@@ -34,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f7f3ea",
+  themeColor: "#fcf9f5",
   width: "device-width",
   initialScale: 1,
 };
@@ -49,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+        <ExperienceMotion />
         <SiteHeader />
         <main id="main" className="flex-1">
           {children}

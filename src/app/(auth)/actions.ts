@@ -66,12 +66,14 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
   if (!rl.ok) return { error: `Too many attempts. Try again in ${rl.retryAfterSeconds}s.` };
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: "Enter a valid email and password." };
+  const chosenType = formData.get("accountType");
+  if (chosenType !== "organizer" && chosenType !== "individual") return { error: "Choose an account type before signing in." };
   const next = String(formData.get("next") ?? "");
   // Only relative, same-site paths may override the role-based destination.
   const nextRoute = next.startsWith("/") && !next.startsWith("//") &&
     !next.includes("\\") && !/[\r\n]/.test(next) && next !== "/" &&
     !next.startsWith("/login") && !next.startsWith("/signup") ? next : null;
-  let destination = "/account/tickets";
+  let destination = "/account";
 
   if (!authConfigured()) return { error: "Sign-in configuration is incomplete. Please contact the site administrator." };
   try {
@@ -105,7 +107,23 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
       await supabase.auth.signOut();
       return { error: "This account does not have administrator access. Sign in with your admin account." };
     }
-    destination = nextRoute ?? (role === "admin" ? "/admin" : "/account/tickets");
+    const { data: membership, error: memberError } = await admin.from("organization_members")
+      .select("id").eq("user_id", data.user.id).eq("status", "active")
+      .in("role", ["owner", "admin", "manager"]).limit(1).maybeSingle();
+    if (memberError) return { error: "Unable to load organizer permissions. Please try again." };
+    const isOrganizer = Boolean(membership) || data.user.user_metadata?.account_type === "organizer";
+    if (role !== "admin" && chosenType !== (isOrganizer ? "organizer" : "individual")) {
+      await supabase.auth.signOut();
+      return { error: isOrganizer
+        ? "This is an organizer account. Choose Organizer on the account selection page."
+        : "This is an individual account. Choose Individual on the account selection page." };
+    }
+    // Do not let an untrusted next parameter cross account boundaries.
+    const safeRoleNext = nextRoute && (
+      role === "admin" || (isOrganizer ? nextRoute.startsWith("/host") : nextRoute.startsWith("/account"))
+    ) ? nextRoute : null;
+    destination = role === "admin" ? (safeRoleNext ?? "/admin")
+      : safeRoleNext ?? (isOrganizer ? "/host" : "/account");
   } catch (error) {
     recordAuthFailure("login", error);
     return { error: "Unable to connect to authentication. Run the local auth diagnostic and try again." };
@@ -116,8 +134,23 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
 export async function signupAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const rl = rateLimit(await clientKey("signup"), RATE_LIMITS.signup);
   if (!rl.ok) return { error: `Too many signup attempts. Try again in ${rl.retryAfterSeconds}s.` };
+  const accountType = formData.get("accountType");
+  if (accountType !== "organizer" && accountType !== "individual") return { error: "Choose an account type before registering." };
+  if (formData.get("termsAccepted") !== "yes") return { error: "Please agree to the Terms and Privacy Policy." };
+  if (formData.get("password") !== formData.get("confirmPassword")) return { error: "Passwords do not match." };
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  if (!firstName || !lastName || firstName.length > 60 || lastName.length > 60) return { error: "Enter your first and last name." };
+  const fullName = [firstName, lastName].join(" ");
+  const orgName = String(formData.get("organizationName") ?? "").trim().slice(0, 100);
+  const permittedCities = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Other"];
+  const eventCityValue = String(formData.get("eventCity") ?? "");
+  const eventCity = permittedCities.includes(eventCityValue) ? eventCityValue : "";
+  const referralValue = String(formData.get("referral") ?? "");
+  const referrals = ["Friends or family", "Social media", "At an event", "Search engine", "Other"];
+  const referral = referrals.includes(referralValue) ? referralValue : "";
   const parsed = signupSchema.safeParse({
-    email: formData.get("email"), password: formData.get("password"), fullName: formData.get("fullName"),
+    email: formData.get("email"), password: formData.get("password"), fullName,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form fields." };
   if (!authConfigured()) return { error: "Account creation is not configured yet. Please contact the site administrator." };
@@ -127,7 +160,7 @@ export async function signupAction(_prev: AuthFormState, formData: FormData): Pr
     const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
-      options: { data: { full_name: parsed.data.fullName }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
+      options: { data: { full_name: parsed.data.fullName, account_type: accountType, organization_name: accountType === "organizer" ? orgName : "", event_city: accountType === "organizer" ? eventCity : "", referral_source: referral }, emailRedirectTo: `${canonicalAppUrl()}/auth/callback` },
     });
     if (error) {
       recordAuthFailure("signup", error);

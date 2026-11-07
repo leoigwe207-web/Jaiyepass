@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getHostContext } from "@/lib/host";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isOrganizationActive } from "@/lib/organization-status";
 import { EventForm, EMPTY_EVENT } from "@/components/host/event-form";
 import { createEventAction } from "@/app/host/actions";
 
@@ -21,6 +22,8 @@ export default async function NewEventPage() {
       </p>
     );
   }
+
+  if (!(await isOrganizationActive(orgId))) return <p role="alert" className="rounded-xl border border-warning/40 p-5 text-sm">Organizer access is currently paused or rejected. Contact support to resolve your account status.</p>;
 
   const admin = createAdminClient();
   const [{ data: cities }, { data: categories }] = await Promise.all([

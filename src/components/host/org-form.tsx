@@ -58,7 +58,7 @@ export function OrgForm() {
         {pending ? "Creating…" : "Create organizer account"}
       </button>
       <p className="text-xs text-ink-faint">
-        Your account is reviewed by our team before events go live — usually within one business day.
+        Your organizer account is activated immediately after setup. Individual event listings may still require review.
       </p>
     </form>
   );

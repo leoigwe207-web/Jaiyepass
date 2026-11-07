@@ -3,62 +3,32 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-/** Hero search: query + city, pushes to the browse page. */
 export function HomeSearch({ cities }: { cities: { name: string; slug: string }[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
-
   return (
-    <form
-      role="search"
-      aria-label="Search events"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const params = new URLSearchParams();
-        if (q.trim()) params.set("q", q.trim());
-        if (city) params.set("city", city);
-        router.push(`/events?${params.toString()}`);
-      }}
-      className="flex flex-col gap-2 sm:flex-row rounded-card border border-white/20 bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,.12)]"
-    >
-      <div className="relative flex-1">
-        <label htmlFor="hero-q" className="sr-only">
-          Search events
-        </label>
-        <input
-          id="hero-q"
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search artists, venues, vibes…"
-          className="w-full rounded-card border border-line bg-white px-4 py-3.5 text-base placeholder:text-ink-faint"
-        />
+    <form role="search" aria-label="Find events" className="jp-home-search" onSubmit={(event) => {
+      event.preventDefault();
+      const params = new URLSearchParams();
+      if (q.trim()) params.set("q", q.trim());
+      if (city) params.set("city", city);
+      router.push("/events" + (params.size ? "?" + params.toString() : ""));
+    }}>
+      <div className="jp-v3-search-input-wrap">
+        <span aria-hidden="true" className="jp-v3-search-icon">⌕</span>
+        <label htmlFor="home-search-q" className="sr-only">Search by artist, event, or venue</label>
+        <input id="home-search-q" type="search" value={q} onChange={event => setQ(event.target.value)} placeholder="Search for a good time…" className="jp-v3-search-input" />
       </div>
-      <div className="sm:w-48">
-        <label htmlFor="hero-city" className="sr-only">
-          City
-        </label>
-        <select
-          id="hero-city"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className="w-full rounded-card border border-line bg-white px-4 py-3.5 text-base"
-        >
-          <option value="">All Nigeria</option>
-          {cities.filter((c) => c.slug !== "accra").map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
+      <div className="jp-v3-search-city-wrap">
+        <label htmlFor="home-search-city" className="sr-only">City</label>
+        <span aria-hidden="true">⌖</span>
+        <select id="home-search-city" value={city} onChange={event => setCity(event.target.value)} className="jp-v3-search-select">
+          <option value="">Anywhere in Nigeria</option>
+          {cities.filter(item => item.slug !== "accra").map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}
         </select>
       </div>
-      <button
-        type="submit"
-        className="rounded-card bg-ink px-6 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-night"
-      >
-        Search
-      </button>
+      <button type="submit" className="jp-v3-search-submit">Find events <span aria-hidden="true">↗</span></button>
     </form>
   );
 }

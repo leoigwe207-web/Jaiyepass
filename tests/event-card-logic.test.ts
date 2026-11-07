@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decorateEventCards } from "@/lib/event-card-logic";
+import { getPublicSaleStatus } from "@/lib/public-sale-status";
 
 describe("event card relationship normalization", () => {
   it("converts Supabase related-city, venue and category records to strings", () => {
@@ -30,5 +31,46 @@ describe("event card relationship normalization", () => {
     expect(event.city_name).toBeNull();
     expect(event.venue_name).toBeNull();
     expect(event.category_name).toBe("comedy");
+  });
+});
+
+
+describe("public event ticket sales state", () => {
+  const time = Date.parse("2026-11-06T22:56:00Z");
+  const tier = (overrides: Partial<{status:string; quantity:number; sold_count:number; sales_start_at:string|null; sales_end_at:string|null}> = {}) =>
+    ({ status: "active", quantity: 50, sold_count: 0, sales_start_at: null, sales_end_at: null, ...overrides });
+
+  it("does not label future active tiers sold out (Collide 3.0 regression)", () => {
+    const tiers = [
+      tier({quantity:50,sales_start_at:"2026-11-06T23:21:00Z"}),
+      tier({quantity:10,sales_start_at:"2026-11-06T23:23:00Z"}),
+      tier({quantity:5,sales_start_at:"2026-11-06T23:24:00Z"}),
+    ];
+    const result = getPublicSaleStatus(tiers, time);
+    expect(result.status).toBe("upcoming");
+    expect(result.nextOpenMs).toBe(Date.parse("2026-11-06T23:21:00Z"));
+    expect(result.inStock).toHaveLength(0);
+  });
+
+  it("becomes available automatically after ticket sales open", () => {
+    const result = getPublicSaleStatus([tier({sales_start_at:"2026-11-06T23:21:00Z"})],Date.parse("2026-11-06T23:22:00Z"));
+    expect(result.status).toBe("available");
+    expect(result.remaining).toBe(50);
+  });
+
+  it("marks only truly exhausted tickets as sold out", () => {
+    expect(getPublicSaleStatus([tier({quantity:5,sold_count:5})],time).status).toBe("sold_out");
+  });
+
+  it("distinguishes ended sales and empty tier arrays from sold out", () => {
+    expect(getPublicSaleStatus([], time).status).toBe("closed");
+    expect(getPublicSaleStatus([tier({sales_end_at:"2026-11-06T21:00:00Z"})],time).status).toBe("closed");
+  });
+
+  it("does not say sold out when a later ticket release is scheduled", () => {
+    expect(getPublicSaleStatus([
+      tier({quantity:5,sold_count:5}),
+      tier({quantity:10,sales_start_at:"2026-11-07T10:00:00Z"}),
+    ],time).status).toBe("upcoming");
   });
 });

@@ -29,11 +29,11 @@ export function TicketTypeForm({
         <input name="perOrderLimit" type="number" min={1} max={100} defaultValue={10} placeholder="Max per order" className="rounded-card border border-line bg-white px-3 py-2 text-sm" />
         <input name="description" maxLength={400} placeholder="Description (optional)" className="rounded-card border border-line bg-white px-3 py-2 text-sm sm:col-span-2" />
         <label className="text-xs text-ink-faint">
-          Sales start (optional)
+          Sales start (optional, Lagos time · WAT)
           <input name="salesStartAt" type="datetime-local" className="mt-1 w-full rounded-card border border-line bg-white px-3 py-2 text-sm" />
         </label>
         <label className="text-xs text-ink-faint">
-          Sales end (optional)
+          Sales end (optional, Lagos time · WAT)
           <input name="salesEndAt" type="datetime-local" className="mt-1 w-full rounded-card border border-line bg-white px-3 py-2 text-sm" />
         </label>
       </div>

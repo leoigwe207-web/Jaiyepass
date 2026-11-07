@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getHostContext, getOrgBalance } from "@/lib/host";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isOrganizationActive } from "@/lib/organization-status";
 import { formatKobo } from "@/lib/money";
 import { formatDateTime } from "@/lib/format";
 import { PayoutForm } from "@/components/host/host-forms";
@@ -33,6 +34,7 @@ export default async function PayoutsPage() {
     );
   }
 
+  const orgActive = await isOrganizationActive(orgId);
   const admin = createAdminClient();
   const [balance, { data: org }, { data: payouts }] = await Promise.all([
     getOrgBalance(orgId),
@@ -56,7 +58,7 @@ export default async function PayoutsPage() {
     .eq("user_id", user.id)
     .eq("status", "active")
     .maybeSingle();
-  const canRequest = roleRow?.role === "owner" || roleRow?.role === "admin";
+  const canRequest = orgActive && (roleRow?.role === "owner" || roleRow?.role === "admin");
   const hasBankDetails = !!(org?.payout_account_number && org.payout_bank_name);
 
   return (
@@ -89,7 +91,9 @@ export default async function PayoutsPage() {
 
       <section className="rounded-card border border-line bg-white p-5">
         <h2 className="font-bold">Withdraw funds</h2>
-        {!balance.ledgerReady ? (
+        {!orgActive ? (
+          <p className="mt-2 text-sm text-danger">Organizer account is paused or rejected. New payout requests are disabled. Contact support.</p>
+        ) : !balance.ledgerReady ? (
           <p className="mt-2 text-sm text-ink-faint">Payout requests are securely paused until reconciliation is enabled.</p>
         ) : !hasBankDetails ? (
           <p className="mt-2 text-sm text-ink-faint">

@@ -27,8 +27,9 @@ export async function getFeaturedEvents(limit = 4): Promise<EventCardDatum[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("events")
-    .select(`${EVENT_CARD_SELECT}, category_name:categories(slug)`)
+    .select(`${EVENT_CARD_SELECT}, org:organizations!inner(verification), category_name:categories(slug)`)
     .eq("status", "published")
+    .eq("org.verification", "verified")
     .eq("is_demo", false)
     .order("featured", { ascending: false })
     .order("starts_at", { ascending: true })
@@ -55,8 +56,9 @@ export async function browseEvents(
 
   let query = supabase
     .from("events")
-    .select(`${EVENT_CARD_SELECT}, venue_name:venues(name), category_name:categories(slug)`)
+    .select(`${EVENT_CARD_SELECT}, org:organizations!inner(verification), venue_name:venues(name), category_name:categories(slug)`)
     .eq("status", "published")
+    .eq("org.verification", "verified")
     .eq("is_demo", false);
 
   if (filters.q) {

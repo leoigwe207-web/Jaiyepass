@@ -148,3 +148,37 @@ export function FieldDecisionForm({
     </form>
   );
 }
+
+
+/** Admin-only organizer moderation; a reason is required for restrictive actions. */
+export function OrganizerModerationForm({
+  action,
+  orgId,
+  currentStatus,
+}: {
+  action: (prev: AdminActionState, formData: FormData) => Promise<AdminActionState>;
+  orgId: string;
+  currentStatus: string;
+}) {
+  const [state, formAction, pending] = useActionState<AdminActionState, FormData>(action, {});
+  return (
+    <form action={formAction} className="space-y-2">
+      <input type="hidden" name="orgId" value={orgId} />
+      <label htmlFor={"moderation-note-" + orgId} className="block text-xs font-semibold text-ink-soft">Reason for pause/rejection</label>
+      <textarea id={"moderation-note-" + orgId} name="note" maxLength={400} rows={2} placeholder="Describe the complaint or concern…" className="w-full rounded-card border border-line bg-white px-3 py-2 text-sm" />
+      <div className="flex flex-wrap gap-2">
+        {currentStatus !== "verified" && (
+          <button type="submit" name="decision" value="verified" disabled={pending} className="rounded-card bg-success px-3 py-2 text-xs font-bold text-white disabled:opacity-60">Restore access</button>
+        )}
+        {currentStatus !== "paused" && (
+          <button type="submit" name="decision" value="paused" disabled={pending} className="rounded-card border border-warning/40 px-3 py-2 text-xs font-bold text-warning disabled:opacity-60">Pause organizer</button>
+        )}
+        {currentStatus !== "rejected" && (
+          <button type="submit" name="decision" value="rejected" disabled={pending} className="rounded-card border border-danger/40 px-3 py-2 text-xs font-bold text-danger disabled:opacity-60">Reject organizer</button>
+        )}
+      </div>
+      {state.ok && <p className="text-xs font-bold text-success">Organizer status updated.</p>}
+      <ErrorLine state={state} />
+    </form>
+  );
+}

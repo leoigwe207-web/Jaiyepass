@@ -40,24 +40,28 @@ export function Scanner({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const lastScanned = useRef<string>("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const loopRef = useRef<number | null>(null);
+  const controlsRef = useRef<{ stop(): void } | null>(null);
+  const cameraGenerationRef = useRef(0);
+  const busyRef = useRef(false);
+  const selectedEventRef = useRef(eventId);
+  selectedEventRef.current = eventId;
 
   const currentTitle = events.find((e) => e.id === eventId)?.title ?? "";
 
   async function submitScan(payload: string) {
     const clean = payload.trim();
-    if (!clean || !eventId || busy) return;
+    if (!clean || !selectedEventRef.current || busyRef.current) return;
     // Debounce identical codes for 3s (the camera loop fires repeatedly).
     if (lastScanned.current === clean) return;
 
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: clean, eventId }),
+        body: JSON.stringify({ payload: clean, eventId: selectedEventRef.current }),
       });
       const json = await res.json().catch(() => ({}));
       if (res.status === 401) {
@@ -75,6 +79,7 @@ export function Scanner({
     } catch {
       setError("Network error — check your connection and scan again.");
     }
+    busyRef.current = false;
     setBusy(false);
     lastScanned.current = clean;
     window.setTimeout(() => {
@@ -83,51 +88,53 @@ export function Scanner({
   }
 
   function stopCamera() {
-    if (loopRef.current) window.clearInterval(loopRef.current);
-    loopRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
+    // Invalidate a camera request that might still be awaiting permission.
+    cameraGenerationRef.current += 1;
+    controlsRef.current?.stop();
+    controlsRef.current = null;
+    const video = videoRef.current;
+    const stream = video?.srcObject as MediaStream | null | undefined;
+    stream?.getTracks().forEach((track) => track.stop());
+    if (video) video.srcObject = null;
     setCameraOn(false);
   }
 
   async function startCamera() {
-    setCameraError(null);
-    if (!("BarcodeDetector" in window)) {
-      setCameraError("This browser can't scan camera codes — paste the QR value below instead.");
+    const video = videoRef.current;
+    if (!video || !navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera scanning requires HTTPS and browser camera access. Use manual entry instead.");
       return;
     }
+    setCameraError(null);
+    setCameraOn(true);
+    const generation = ++cameraGenerationRef.current;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
+      // ZXing works in browsers without the experimental BarcodeDetector API.
+      // The camera and decoding library load only after the organizer taps Start.
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      if (generation !== cameraGenerationRef.current) return;
+      const reader = new BrowserQRCodeReader();
+      const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+        if (result) void submitScan(result.getText());
       });
-      streamRef.current = stream;
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      await video.play();
-      setCameraOn(true);
-
-      const detector = new (window as unknown as { BarcodeDetector: new (o: { formats: string[] }) => { detect(v: HTMLVideoElement): Promise<{ rawValue: string }[]> } }).BarcodeDetector({
-        formats: ["qr_code"],
-      });
-      loopRef.current = window.setInterval(async () => {
-        if (!videoRef.current || busy) return;
-        try {
-          const codes = await detector.detect(videoRef.current);
-          const value = codes[0]?.rawValue;
-          if (value) void submitScan(value);
-        } catch {
-          /* transient detect failure */
-        }
-      }, 700);
+      if (generation !== cameraGenerationRef.current) {
+        controls.stop();
+        return;
+      }
+      controlsRef.current = controls;
     } catch {
-      setCameraError("Camera permission denied — use manual entry below.");
+      if (generation !== cameraGenerationRef.current) return;
       stopCamera();
+      setCameraError("Could not open the camera. Allow access in browser settings, or enter the ticket code below.");
     }
   }
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => () => {
+    cameraGenerationRef.current += 1;
+    controlsRef.current?.stop();
+    const stream = videoRef.current?.srcObject as MediaStream | null | undefined;
+    stream?.getTracks().forEach((track) => track.stop());
+  }, []);
 
   if (events.length === 0) {
     return (

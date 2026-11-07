@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSessionUser } from "@/lib/auth";
+import { getOrderAccess } from "@/lib/guest-checkout";
 import { computePromoDiscount } from "@/lib/checkout";
 import { orderTotals } from "@/lib/money";
 import { rateLimit, clientIp, RATE_LIMITS } from "@/lib/rate-limit";
@@ -19,9 +19,7 @@ const bodySchema = z.object({
  * sets an amount. Redemption counters are incremented at apply time.
  */
 export async function POST(req: Request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
-
+ 
   const rl = rateLimit(`promo:${clientIp(req)}`, RATE_LIMITS.promo);
   if (!rl.ok) {
     return NextResponse.json({ error: "Too many attempts — try again shortly." }, { status: 429 });
@@ -36,6 +34,8 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) return NextResponse.json({ error: "Invalid promo code." }, { status: 400 });
 
+  const access = await getOrderAccess(parsed.data.orderId);
+  if (!access) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   const admin = createAdminClient();
   const { data: order } = await admin
     .from("orders")
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     .eq("id", parsed.data.orderId)
     .maybeSingle();
 
-  if (!order || order.user_id !== user.id) {
+  if (!order || order.user_id !== access.userId) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
   // Once Paystack has initialized, the amount is frozen to avoid mismatches.

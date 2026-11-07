@@ -14,7 +14,9 @@ import { sendEmail, refundEmail } from "@/lib/email";
 import { formatKobo } from "@/lib/money";
 import { getOrgBalance } from "@/lib/host";
 import { serverEnv } from "@/lib/env";
+import { isOrganizationActive } from "@/lib/organization-status";
 import { rateLimit } from "@/lib/rate-limit";
+import { lagosLocalToUtcIso } from "@/lib/ticket-sales-time";
 
 export type ActionState = { error?: string; ok?: boolean; id?: string };
 
@@ -25,6 +27,7 @@ async function requireHostRole(orgId: string, roles: HostRole[] = ["owner", "adm
   const user = await requireUser();
   const role = await getOrgMembership(user.id, orgId);
   if (!role || !roles.includes(role)) return null;
+  if (!(await isOrganizationActive(orgId))) return null;
   return { user, role, admin: createAdminClient() };
 }
 
@@ -110,7 +113,7 @@ export async function createOrganizationAction(_prev: ActionState, formData: For
       payout_account_number: parsed.data.payoutAccountNumber || null,
       payout_account_name: parsed.data.payoutAccountName || null,
       created_by: user.id,
-      verification: "pending",
+      verification: "verified",
     })
     .select("id")
     .single();
@@ -136,7 +139,7 @@ export async function createOrganizationAction(_prev: ActionState, formData: For
     action: "org.created",
     entityType: "organization",
     entityId: org.id,
-    metadata: { slug },
+    metadata: { slug, verification: "verified", approvalMode: "automatic" },
   });
 
   revalidatePath("/host");
@@ -197,6 +200,7 @@ export async function createEventAction(_prev: ActionState, formData: FormData):
     .in("role", ["owner", "admin", "manager"])
     .maybeSingle();
   if (!membership) return { error: "You don't have permission to create events." };
+  if (!(await isOrganizationActive(membership.organization_id))) return { error: "Your organizer account is paused or rejected. Contact support." };
 
   const rl = rateLimit(`event-create:${user.id}`, { limit: 20, windowMs: 10 * 60_000 });
   if (!rl.ok) return { error: "Too many attempts — try again shortly." };
@@ -393,6 +397,15 @@ export async function addTicketTypeAction(eventId: string, _prev: ActionState, f
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the ticket details." };
 
+  // HTML datetime-local values represent the organizer's Lagos wall clock time.
+  const startIso = parsed.data.salesStartAt ? lagosLocalToUtcIso(parsed.data.salesStartAt) : null;
+  const endIso = parsed.data.salesEndAt ? lagosLocalToUtcIso(parsed.data.salesEndAt) : null;
+  if (parsed.data.salesStartAt && !startIso) return { error: "Enter a valid sales start in Lagos time (WAT)." };
+  if (parsed.data.salesEndAt && !endIso) return { error: "Enter a valid sales end in Lagos time (WAT)." };
+  if (startIso && endIso && Date.parse(endIso) <= Date.parse(startIso)) {
+    return { error: "Sales end must be later than sales start." };
+  }
+
   const { data, error } = await ctx.admin
     .from("ticket_types")
     .insert({
@@ -402,8 +415,8 @@ export async function addTicketTypeAction(eventId: string, _prev: ActionState, f
       price_kobo: parsed.data.priceKobo,
       quantity: parsed.data.quantity,
       per_order_limit: parsed.data.perOrderLimit,
-      sales_start_at: parsed.data.salesStartAt ? new Date(parsed.data.salesStartAt).toISOString() : null,
-      sales_end_at: parsed.data.salesEndAt ? new Date(parsed.data.salesEndAt).toISOString() : null,
+      sales_start_at: startIso,
+      sales_end_at: endIso,
       status: "active",
     })
     .select("id")
@@ -750,6 +763,7 @@ export async function requestPayoutAction(_prev: ActionState, formData: FormData
     .in("role", ["owner", "admin"])
     .maybeSingle();
   if (!membership) return { error: "Only owners/admins can request payouts." };
+  if (!(await isOrganizationActive(membership.organization_id))) return { error: "This organizer account is paused or rejected. Payout requests are disabled." };
 
   const rl = rateLimit(`payout:${user.id}`, { limit: 5, windowMs: 60 * 60_000 });
   if (!rl.ok) return { error: "Too many payout requests — try again later." };

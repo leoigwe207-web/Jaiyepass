@@ -2,20 +2,20 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="auth-stage">
-      <section className="auth-story" aria-label="About JaiyePass">
-        <div className="auth-story-top"><span className="auth-story-symbol" aria-hidden="true">✳</span><span>BUILT FOR THE MOMENTS THAT MATTER</span></div>
-        <div className="auth-story-content">
-          <p className="auth-story-eyebrow">EXPLORE · EXPERIENCE · REPEAT</p>
-          <p className="auth-story-title">Be there.<br/><em>Feel more.</em></p>
-          <p className="auth-story-copy">From the next big concert to your favorite intimate gathering — your best stories start with showing up.</p>
+    <div className="jp-v3-auth-page">
+      <aside aria-label="JaiyePass experience" className="jp-v3-auth-story">
+        <div className="jp-v3-auth-brand"><Link href="/" className="jp-brand-logo" aria-label="JaiyePass home">Jaiye<span>Pass</span><span className="jp-logo-star" aria-hidden="true">✳</span></Link><span>MEMORIES START HERE</span></div>
+        <div className="jp-v3-auth-poster"><span>01 / YOUR NEXT CHAPTER</span><h2>Good times<br/>look good<br/><em>on you.</em></h2><p>One account. Plenty of possibilities.<br/>Your pass to a good time starts here.</p></div>
+        <div className="jp-v3-auth-design" aria-hidden="true"><span>✳</span></div>
+        <p className="jp-v3-auth-brief">DISCOVER. BOOK. SHOW UP. LIVE MORE. ✳</p>
+      </aside>
+      <div className="jp-v3-auth-main">
+        <div className="jp-v3-auth-content">
+          <Link href="/" className="jp-auth-wordmark" aria-label="JaiyePass home">Jaiye<span>Pass</span><span className="jp-logo-star" aria-hidden="true">✳</span></Link>
+          {children}
         </div>
-        <div className="auth-story-bottom"><span>01 / YOUR PASS TO A GOOD TIME</span><span>MADE FOR NIGERIA <span aria-hidden="true">↗</span></span></div>
-      </section>
-      <section className="auth-content">
-        <div className="auth-mobile-brand"><Link href="/" className="font-bold" aria-label="JaiyePass homepage">Jaiye<span className="text-neon-deep">Pass</span></Link><span>YOUR PASS TO A GOOD TIME</span></div>
-        {children}
-      </section>
+        <div className="jp-v3-auth-policy"><span>SECURE ACCOUNT ACCESS</span><Link href="/privacy">Privacy policy ↗</Link></div>
+      </div>
     </div>
   );
 }

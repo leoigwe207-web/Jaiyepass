@@ -1,307 +1,179 @@
 import Link from "next/link";
-import { browseEvents, getCategories, getCities, supabaseConfigured } from "@/lib/queries";
-import { COLLECTIONS } from "@/lib/collections";
-import { EventCard, EventFeature, EventRow } from "@/components/event-card";
-import { ButtonLink, EmptyState } from "@/components/ui";
+import { browseEvents, getCategories, getCities } from "@/lib/queries";
+import { EventCard, type EventCardDatum } from "@/components/event-card";
 import { HomeSearch } from "@/components/home-search";
+import { EventImage } from "@/components/ui";
+import { formatDate, formatTime } from "@/lib/format";
+import { formatKobo } from "@/lib/money";
+import { OrbitMark, Reveal, PressableMotion } from "@/components/motion/primitives";
 
 export const revalidate = 300;
 
+const cities = [
+  { name: "Lagos", slug: "lagos", tag: "THE CITY THAT NEVER RESTS", code: "01" },
+  { name: "Abuja", slug: "abuja", tag: "THE CAPITAL HAS PLANS", code: "02" },
+  { name: "Port Harcourt", slug: "port-harcourt", tag: "GOOD ENERGY, ALWAYS", code: "03" },
+];
+
+function HomeEventRow({ event }: { event: EventCardDatum }) {
+  const price = event.price_min_kobo === 0 || event.is_free
+    ? "Free" : event.price_min_kobo == null ? "See tickets" : formatKobo(event.price_min_kobo, { hideZeroDecimals: true });
+  return (
+    <Link href={"/events/" + event.slug} className="jp-home-event-row group">
+      <div className="min-w-0 flex-1 py-1">
+        <p className="jp-event-kicker">UPCOMING EXPERIENCE</p>
+        <h3 className="mt-2 line-clamp-2 text-lg font-bold leading-snug group-hover:text-neon-deep">{event.title}</h3>
+        <p className="mt-2 line-clamp-1 text-xs text-ink-soft">{formatDate(event.starts_at)} · {formatTime(event.starts_at)}</p>
+        <p className="mt-1 line-clamp-1 text-xs text-ink-soft">{[event.venue_name, event.city_name].filter(Boolean).join(" · ") || "Nigeria"}</p>
+        <p className="mt-3 text-sm font-extrabold text-neon-deep">{price} <span aria-hidden="true">↗</span></p>
+      </div>
+      <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-paper-deep sm:h-36 sm:w-44">
+        <EventImage src={event.image_url} alt={event.title} title={event.title} category={event.category_name} />
+      </div>
+    </Link>
+  );
+}
+
 export default async function HomePage() {
-  const [featured, upcoming, categories, cities] = await Promise.all([
-    getFeaturedEventsSafe(),
-    browseEvents({ sort: "soonest" }, 9),
+  const [events, categories, availableCities] = await Promise.all([
+    browseEvents({ sort: "soonest" }, 18),
     getCategories(),
     getCities(),
   ]);
-
-  const hero = featured[0];
-  const secondary = featured.slice(1, 3);
-  const gridEvents = upcoming.filter((e) => e.slug !== hero?.slug).slice(0, 6);
-  const under10k = upcoming.filter((e) => e.price_min_kobo != null && e.price_min_kobo <= 1_000_000 && e.slug !== hero?.slug).slice(0, 4);
-  const freeEvents = upcoming.filter((e) => e.is_free && e.slug !== hero?.slug).slice(0, 4);
-
+  const featured = events.slice(0, 3);
+  const upcoming = events.slice(0, 10);
   return (
     <>
-      {/* ── Hero: event-led, spacious, readable on a small laptop ─────────── */}
-      <section className="relative overflow-hidden border-b border-line bg-paper">
-        <div aria-hidden="true" className="pointer-events-none absolute right-5 top-2 hidden select-none text-[12rem] leading-none text-ink/[.035] lg:block">✳</div>
-        <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-10 sm:px-6 md:pb-20 md:pt-14">
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-end">
-            <div>
-              <p className="eyebrow"><span aria-hidden="true" className="mr-2 text-neon-deep">✳</span> LIVE EXPERIENCES, ALL ACROSS NIGERIA</p>
-              <h1 className="display-xl mt-4 max-w-[12ch]">
-                Be there
-                <br />
-                <span className="italic text-neon-deep">for the</span> moment.
-              </h1>
-              <p className="mt-6 max-w-[41ch] text-base leading-relaxed text-ink-soft sm:text-lg">
-                Big sounds. Small rooms. Brilliant people. Find real events across Nigeria,
-                book your place and make the night yours.
-              </p>
-              <div className="mt-7">
-                <HomeSearch cities={cities} />
-              </div>
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
-                <Link href="/events" className="inline-flex items-center justify-center rounded-card bg-neon-deep px-5 py-3 text-white transition-colors hover:bg-night">Explore events <span aria-hidden="true" className="ml-2">↗</span></Link>
-                <Link href="/host-onboarding" className="inline-flex items-center justify-center rounded-card border border-ink px-5 py-3 text-ink transition-colors hover:bg-ink hover:text-paper">Host an event</Link>
-              </div>
+      <section data-jp-hero className="jp-v3-hero relative overflow-hidden" aria-labelledby="jp-home-heading">
+        <div className="jp-v3-hero-grain" aria-hidden="true" />
+        <div className="jp-v3-container jp-v3-hero-layout relative">
+          <div className="jp-v3-hero-content">
+            <div data-jp-hero-line className="jp-v3-hero-overline"><span className="jp-v3-live-dot" /> THE CULTURE IS CALLING <span className="jp-v3-hero-overline-end">NG / 2026</span></div>
+            <h1 id="jp-home-heading" className="jp-v3-hero-title">
+              <span data-jp-hero-line>Life looks better</span>
+              <span data-jp-hero-line>when you <em>go out.</em></span>
+            </h1>
+            <p data-jp-hero-line className="jp-v3-hero-description">The concerts. The unforgettable nights. The things you&apos;ll talk about tomorrow. Find your people, find your plans, and be there.</p>
+            <div data-jp-hero-line className="jp-v3-hero-actions">
+              <Link href="/events" className="jp-v3-hero-cta">Explore events <span aria-hidden="true">↗</span></Link>
+              <a href="#discover" className="jp-v3-hero-secondary">See what&apos;s happening <span aria-hidden="true">↓</span></a>
             </div>
-
-            <div className="lg:pb-2">
-              {hero ? (
-                <EventFeature event={hero} />
-              ) : (
-                <div className="jp-home-empty relative flex min-h-[320px] flex-col justify-between overflow-hidden border border-white/10 bg-night p-7 text-paper sm:min-h-[400px] sm:p-9">
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-[.2em] text-white/70">The lineup starts here</span>
-                    <span aria-hidden="true" className="text-4xl text-neon">✳</span>
-                  </div>
-                  <div className="relative z-10">
-                    <p className="font-[family-name:var(--font-fraunces)] text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.05] tracking-[-.04em]">
-                      Good things<br />are coming.
-                    </p>
-                    <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/75">
-                      {supabaseConfigured()
-                        ? "New experiences will appear here as hosts publish their events."
-                        : "Discover a growing calendar of Nigerian experiences."}
-                    </p>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <Link href="/events" className="inline-flex min-h-11 items-center bg-neon px-5 py-3 text-sm font-bold text-white hover:bg-neon-deep">Explore events</Link>
-                      <Link href="/host-onboarding" className="inline-flex min-h-11 items-center border border-white/50 px-5 py-3 text-sm font-bold text-white hover:bg-white hover:text-ink">List an event</Link>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <div data-jp-hero-line className="jp-v3-hero-bottom"><span>BUILT FOR REAL-LIFE MOMENTS</span><span aria-hidden="true">✳</span><span>MADE IN NIGERIA</span></div>
           </div>
-
-          {secondary.length > 0 && (
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {secondary.map((e) => (
-                <EventFeature key={e.slug} event={e} size="md" />
-              ))}
+          <div className="jp-v3-hero-visual" aria-hidden="true">
+            <div className="jp-v3-visual-back">IT&apos;S<br/>YOUR<br/>TIME.</div>
+            <div className="jp-v3-orbit-container"><OrbitMark /></div>
+            <div className="jp-v3-ticket-art">
+              <div className="jp-v3-ticket-cut-top" />
+              <div className="jp-v3-ticket-head"><span>JAIYEPASS PRESENTS</span><span>✳ 001</span></div>
+              <div className="jp-v3-ticket-main">
+                <span className="jp-v3-ticket-sun" />
+                <p>THIS IS<br/><em>YOUR</em><br/>SIGN.</p>
+              </div>
+              <div className="jp-v3-ticket-foot"><span>GO OUT.<br/>LIVE MORE.</span><span className="jp-v3-ticket-barcode">▮▯▮▮▯▮▯▮▮</span></div>
+              <div className="jp-v3-ticket-cut-bottom" />
             </div>
-          )}
+            <span className="jp-v3-visual-star">✳</span>
+            <span className="jp-v3-visual-caption">A LITTLE MORE LIVING / A LOT MORE MEMORIES</span>
+          </div>
         </div>
       </section>
 
-      <section aria-label="Explore event locations" className="border-b border-line bg-night text-paper">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-5 sm:px-6">
-          <span className="mr-2 text-xs font-bold uppercase tracking-[.16em] text-white/60">Explore Nigeria</span>
-          {[
-            ["Lagos", "lagos"], ["Abuja", "abuja"], ["Port Harcourt", "port-harcourt"],
-            ["Ibadan", "ibadan"], ["Enugu", "enugu"], ["Kano", "kano"],
-          ].map(([name, slug]) => (
-            <Link key={slug} href={`/events?city=${slug}`} className="rounded-card border border-white/25 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-neon hover:bg-neon-deep">{name} <span aria-hidden="true">↗</span></Link>
-          ))}
-          <Link href="/events" className="ml-auto text-sm font-semibold underline underline-offset-4 hover:text-neon">All locations</Link>
+      <div className="jp-v3-search-wrap relative z-10">
+        <div className="jp-v3-container">
+          <div className="jp-v3-search-panel">
+            <div className="jp-v3-search-heading"><span className="jp-v3-search-badge">01 / FIND YOUR VIBE</span><p>Your next story starts here.</p></div>
+            <HomeSearch cities={availableCities} />
+          </div>
         </div>
+      </div>
+
+      <section id="discover" className="jp-v3-section jp-v3-container" aria-labelledby="featured-title">
+        <Reveal className="jp-v3-section-top">
+          <div><span className="jp-v3-section-kicker">THE GOOD STUFF / 001</span><h2 id="featured-title" className="jp-v3-section-title">Make a night <em>of it.</em></h2><p className="jp-v3-section-copy">A little something for every kind of outside person.</p></div>
+          <Link href="/events" className="jp-v3-text-link">All events <span aria-hidden="true">↗</span></Link>
+        </Reveal>
+
+        {featured.length ? (
+          <div className="jp-v3-feature-grid">
+            {featured.map((event, index) => <Reveal key={event.slug} delay={index * 0.09}><EventCard event={event} /></Reveal>)}
+          </div>
+        ) : (
+          <Reveal>
+            <div className="jp-v3-editorial-empty">
+              <div className="jp-v3-editorial-copy">
+                <span className="jp-v3-section-kicker">THE LINEUP IS COMING TOGETHER</span>
+                <h3>Good things<br/>are <em>on the way.</em></h3>
+                <p>Our next wave of experiences is on its way. Explore by city and be first to see what&apos;s coming.</p>
+                <Link href="/events" className="jp-v3-white-cta">Browse all events <span aria-hidden="true">↗</span></Link>
+              </div>
+              <div className="jp-v3-empty-art" aria-hidden="true"><span>THE<br/>NEXT<br/>THING</span><div className="jp-v3-empty-disc"><span>✳</span></div><small>WILL BE WORTH THE WAIT.</small></div>
+            </div>
+          </Reveal>
+        )}
       </section>
 
-      {/* ── Categories ──────────────────────────────────────────────────── */}
-      {categories.length > 0 && (
-        <section className="border-b border-line bg-paper-deep" aria-labelledby="categories-heading">
-          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-            <div className="flex items-baseline justify-between gap-4">
-              <h2 id="categories-heading" className="display-md">
-                Browse by mood
-              </h2>
-              <Link href="/events" className="text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-neon-deep">
-                All events
-              </Link>
-            </div>
-            <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-              {categories.map((c, index) => (
-                <li key={c.slug}>
-                  <Link
-                    href={`/events?category=${c.slug}`}
-                    data-category={c.slug}
-                    className="jp-category-card group flex min-h-[132px] flex-col justify-between border border-line bg-paper p-4 focus-visible:outline-offset-2 sm:min-h-[156px] sm:p-5"
-                  >
-                    <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[.16em] text-ink-faint">
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <span aria-hidden="true" className="text-lg text-neon-deep transition-transform group-hover:translate-x-1">↗</span>
-                    </span>
-                    <span className="max-w-[12ch] font-[family-name:var(--font-fraunces)] text-[clamp(1.1rem,2vw,1.5rem)] font-bold leading-[1.12]">
-                      {c.name}
-                    </span>
+      <section className="jp-v3-city-section" aria-labelledby="city-heading">
+        <div className="jp-v3-container">
+          <Reveal className="jp-v3-section-top">
+            <div><span className="jp-v3-section-kicker">FIND YOUR SCENE / 002</span><h2 id="city-heading" className="jp-v3-section-title">Every city has <em>a story.</em></h2><p className="jp-v3-section-copy">Choose your city. We&apos;ll handle the good plans.</p></div>
+          </Reveal>
+          <div className="jp-v3-city-grid">
+            {cities.map((city, index) => (
+              <Reveal key={city.slug} delay={index * 0.08}>
+                <PressableMotion>
+                  <Link href={"/events?city=" + city.slug} className={"jp-v3-city-card jp-v3-city-card-" + index}>
+                    <span className="jp-v3-city-number">{city.code} / NIGERIA</span>
+                    <span className="jp-v3-city-name">{city.name}</span>
+                    <span className="jp-v3-city-bottom"><small>{city.tag}</small><span aria-hidden="true">↗</span></span>
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {/* ── Discovery shortcuts: searches, never fictional event claims ── */}
-      <section aria-labelledby="collections-heading" className="border-b border-line bg-paper-deep">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="eyebrow">Explore your way</p>
-              <h2 id="collections-heading" className="display-lg mt-3 max-w-[15ch]">
-                Find your next good story.
-              </h2>
-            </div>
-            <p className="max-w-[39ch] text-base leading-relaxed text-ink-soft md:pb-1">
-              Find real events across Nigeria by date, price or location.
-              Your next experience starts with a simple search.
-            </p>
-          </div>
-
-          <div className="mt-9 grid gap-3 md:grid-cols-3">
-            {COLLECTIONS.map((c, index) => (
-              <Link
-                key={c.slug}
-                href={collectionHref(c.filter)}
-                className={`jp-discovery-tile group flex min-h-[228px] flex-col justify-between p-6 sm:p-7 ${index === 0 ? "jp-discovery-tile-featured" : ""}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-[.17em] opacity-70">{c.eyebrow}</span>
-                  <span aria-hidden="true" className="jp-discovery-arrow">↗</span>
-                </div>
-                <div>
-                  <h3 className="font-[family-name:var(--font-fraunces)] text-[clamp(1.75rem,3vw,2.4rem)] font-bold leading-tight tracking-[-.02em]">{c.title}</h3>
-                  <p className="mt-3 max-w-[28ch] text-sm leading-relaxed opacity-80">{c.blurb}</p>
-                </div>
-              </Link>
+                </PressableMotion>
+              </Reveal>
             ))}
           </div>
-
-          <div className="mt-7 flex flex-col justify-between gap-4 border-t border-line pt-6 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm font-bold">Have a city in mind?</p>
-              <p className="mt-1 text-xs text-ink-soft">Explore events in your preferred location.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {cities.slice(0, 5).map((city) => (
-                <Link key={city.slug} href={`/events?city=${encodeURIComponent(city.slug)}`} className="jp-discovery-city">
-                  {city.name}<span aria-hidden="true">↗</span>
-                </Link>
-              ))}
-              <Link href="/events" className="jp-discovery-city jp-discovery-city-all">All events <span aria-hidden="true">↗</span></Link>
-            </div>
-          </div>
-          {upcoming.length === 0 && (
-            <p className="mt-6 text-sm text-ink-soft" role="status">
-              Events will appear as organizers publish their listings. These shortcuts search live listings; they are not sample events.
-            </p>
-          )}
         </div>
       </section>
 
-      {/* ── Upcoming events grid ────────────────────────────────────────── */}
-      <section className="border-t border-line bg-paper-deep" aria-labelledby="upcoming-heading">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <div>
-              <p className="eyebrow">Upcoming</p>
-              <h2 id="upcoming-heading" className="display-lg mt-2">
-                Coming up across Nigeria
-              </h2>
-            </div>
-            <Link href="/events" className="text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-neon-deep">
-              See everything
-            </Link>
-          </div>
-
-          {gridEvents.length > 0 ? (
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {gridEvents.map((e) => (
-                <EventCard key={e.slug} event={e} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8">
-              <EmptyState
-                title="Nothing on the calendar yet"
-                description="When hosts publish events, they'll show up here first."
-                action={<ButtonLink href="/host-onboarding" variant="secondary">List your event</ButtonLink>}
-              />
-            </div>
-          )}
+      <section className="jp-v3-section jp-v3-container" aria-labelledby="upcoming-title">
+        <Reveal className="jp-v3-section-top">
+          <div><span className="jp-v3-section-kicker">COMING UP / 003</span><h2 id="upcoming-title" className="jp-v3-section-title">On the <em>calendar.</em></h2><p className="jp-v3-section-copy">Find your next occasion, whatever your mood.</p></div>
+          <Link href="/events" className="jp-v3-text-link">View calendar <span aria-hidden="true">↗</span></Link>
+        </Reveal>
+        <div className="jp-v3-filter-strip" role="navigation" aria-label="Quick event filters">
+          <Link className="jp-v3-filter-pill is-active" href="/events">All events</Link>
+          <Link className="jp-v3-filter-pill" href="/events?price=free">Free</Link>
+          <Link className="jp-v3-filter-pill" href="/events?date=weekend">This weekend</Link>
+          <Link className="jp-v3-filter-pill" href="/events?price=under10000">Under ₦10,000</Link>
         </div>
+        {upcoming.length ? (
+          <div className="jp-v3-upcoming-grid">{upcoming.map(event => <HomeEventRow key={event.slug} event={event}/>)}</div>
+        ) : (
+          <Reveal><div className="jp-v3-no-events"><span aria-hidden="true">✳</span><div><h3>Nothing on the calendar just yet.</h3><p>New events will show up here when organizers publish them. Until then, explore by category or city.</p></div><Link href="/events" className="jp-v3-text-link">Explore events ↗</Link></div></Reveal>
+        )}
+        <div className="mt-9 text-center"><Link href="/events" className="jp-v3-dark-cta">See all events <span aria-hidden="true">↗</span></Link></div>
       </section>
 
-      {/* ── Editorial split: free + budget ───────────────────────────────── */}
-      {(freeEvents.length > 0 && under10k.length > 0) && (
-        <section className="border-t border-line" aria-labelledby="budget-heading">
-          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2">
-            <div>
-              <p className="eyebrow">Free this weekend</p>
-              <h2 id="budget-heading" className="display-md mt-2">
-                Zero naira, still a story
-              </h2>
-              <div className="mt-5 space-y-3">
-                {freeEvents.slice(0, 3).map((e) => (
-                  <EventRow key={e.slug} event={e} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="eyebrow">Under ₦10,000</p>
-              <h2 className="display-md mt-2">Big nights, small budget</h2>
-              <div className="mt-5 space-y-3">
-                {under10k.slice(0, 3).map((e) => (
-                  <EventRow key={e.slug} event={e} />
-                ))}
-              </div>
-            </div>
+      {categories.length > 0 && (
+        <section className="jp-v3-categories" aria-labelledby="categories-title">
+          <div className="jp-v3-container">
+            <Reveal><span className="jp-v3-section-kicker">GO BY FEELING / 004</span><h2 id="categories-title" className="jp-v3-section-title">What are you <em>in the mood for?</em></h2></Reveal>
+            <div className="jp-v3-categories-grid">{categories.slice(0, 10).map((category, i) => <Link key={category.slug} href={"/events?category=" + encodeURIComponent(category.slug)} className="jp-v3-category-pill"><span className="jp-v3-category-counter">{String(i+1).padStart(2,"0")}</span>{category.name}<span aria-hidden="true">↗</span></Link>)}</div>
           </div>
         </section>
       )}
 
-      {/* ── Host CTA ─────────────────────────────────────────────────────── */}
-      <section className="bg-night text-paper">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-16 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neon">
-              For organizers
-            </p>
-            <h2 className="display-md mt-3 text-white">
-              Sell tickets. Run the gate.
-              <br />
-              Know your numbers.
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75">
-              Create an event in minutes, take secure Paystack payments, and
-              check attendees in from your phone. Payouts reviewed and released
-              by the platform, with a full ledger.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-3">
-            <ButtonLink href="/host-onboarding">Start selling tickets</ButtonLink>
-            <ButtonLink href="/help" variant="ghost" className="text-white hover:text-neon">
-              How payouts work
-            </ButtonLink>
+      <section id="how-it-works" className="jp-v3-how" aria-labelledby="how-heading">
+        <div className="jp-v3-container jp-v3-how-layout">
+          <Reveal><span className="jp-v3-section-kicker">THE EASY PART / 005</span><h2 id="how-heading">Three steps.<br/><em>One great time.</em></h2><p>From discovering your next plan to getting through the door, we make it beautifully simple.</p><Link href="/events" className="jp-v3-white-cta">Find something to do ↗</Link></Reveal>
+          <div className="jp-v3-how-steps">
+            {[
+              { n: "01", title: "Find your vibe", copy: "Browse events that match your city, your energy, and your budget." },
+              { n: "02", title: "Get your pass", copy: "Secure your spot with a few easy steps and keep your ticket handy." },
+              { n: "03", title: "Make memories", copy: "Show your QR ticket at the door. Enjoy the moment; you've earned it." },
+            ].map((item, i) => <Reveal key={item.n} delay={i*0.07}><div className="jp-v3-how-step"><span>{item.n}</span><div><h3>{item.title}</h3><p>{item.copy}</p></div><span aria-hidden="true">↗</span></div></Reveal>)}
           </div>
         </div>
       </section>
     </>
   );
 }
-
-async function getFeaturedEventsSafe() {
-  try {
-    const { getFeaturedEvents } = await import("@/lib/queries");
-    return await getFeaturedEvents(3);
-  } catch {
-    return [];
-  }
-}
-
-function collectionHref(filter: {
-  city?: string;
-  category?: string;
-  price?: "free" | "under10000";
-  date?: "today" | "weekend" | "week";
-}): string {
-  const params = new URLSearchParams();
-  if (filter.city) params.set("city", filter.city);
-  if (filter.category) params.set("category", filter.category);
-  if (filter.price) params.set("price", filter.price);
-  if (filter.date) params.set("date", filter.date);
-  return `/events?${params.toString()}`;
-}
-
