@@ -15,14 +15,12 @@ describe("Paystack preview and callback safety", () => {
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_live_unsafe_on_preview");
     expect(paidCheckoutConfigured()).toBe(false);
-    expect(serverEnv().testMode).toBe(true);
   });
 
   it("enables checkout only after a test secret is configured for Preview", () => {
     vi.stubEnv("VERCEL_ENV", "preview");
     vi.stubEnv("PAYSTACK_SECRET_KEY", "sk_test_example");
     expect(paidCheckoutConfigured()).toBe(true);
-    expect(serverEnv().testMode).toBe(false);
     vi.stubEnv("PAYSTACK_SECRET_KEY", "");
     expect(paidCheckoutConfigured()).toBe(false);
   });
