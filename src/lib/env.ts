@@ -1,7 +1,8 @@
 // Server-only environment access. Import this ONLY from server code.
 
 export function isTestMode(): boolean {
-  return process.env.NODE_ENV !== "production" && !paidCheckoutConfigured();
+  return (process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV !== "production")
+    && !paidCheckoutConfigured();
 }
 
 /** Prevent a misconfigured Preview secret from showing a payment button.
@@ -44,7 +45,7 @@ export function serverEnv() {
     ticketPepper,
     emailFrom: process.env.EMAIL_FROM ?? "JaiyePass <no-reply@jaiyepass.com>",
     missing,
-    testMode: process.env.NODE_ENV !== "production" && !paidCheckoutConfigured(),
+    testMode: isTestMode(),
   };
 }
 
